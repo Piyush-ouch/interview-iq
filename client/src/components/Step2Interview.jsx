@@ -202,6 +202,17 @@ function Step2Interview({ interviewData, onFinish }) {
 }, [currentIndex]);
 
 
+  const isMicOnRef = useRef(isMicOn);
+  const isAIPlayingRef = useRef(isAIPlaying);
+
+  useEffect(() => {
+    isMicOnRef.current = isMicOn;
+  }, [isMicOn]);
+
+  useEffect(() => {
+    isAIPlayingRef.current = isAIPlaying;
+  }, [isAIPlaying]);
+
   useEffect(() => {
     if (!("webkitSpeechRecognition" in window)) return;
 
@@ -217,8 +228,27 @@ function Step2Interview({ interviewData, onFinish }) {
       setAnswer((prev) => prev + " " + transcript);
     };
 
+    recognition.onend = () => {
+      // Restart recognition if it ends unexpectedly, but isMicOn is still true and AI is not talking
+      if (isMicOnRef.current && !isAIPlayingRef.current) {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.error("Speech recognition failed to restart:", err);
+        }
+      }
+    };
+
     recognitionRef.current = recognition;
 
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.onend = null;
+        try {
+          recognitionRef.current.stop();
+        } catch (err) {}
+      }
+    };
   }, []);
 
 

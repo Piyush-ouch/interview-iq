@@ -15,7 +15,7 @@ function Step2Interview({ interviewData, onFinish }) {
   const { interviewId, questions, userName } = interviewData;
   const [isIntroPhase, setIsIntroPhase] = useState(true);
 
-  const [isMicOn, setIsMicOn] = useState(true);
+  const [isMicOn, setIsMicOn] = useState(false);
   const recognitionRef = useRef(null);
   const [isAIPlaying, setIsAIPlaying] = useState(false);
 
@@ -29,9 +29,21 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voiceGender, setVoiceGender] = useState("female");
   const [subtitle, setSubtitle] = useState("");
+  const [micError, setMicError] = useState("");
 
 
   const videoRef = useRef(null);
+  
+  const isMicOnRef = useRef(isMicOn);
+  const isAIPlayingRef = useRef(isAIPlaying);
+
+  useEffect(() => {
+    isMicOnRef.current = isMicOn;
+  }, [isMicOn]);
+
+  useEffect(() => {
+    isAIPlayingRef.current = isAIPlaying;
+  }, [isAIPlaying]);
 
   const currentQuestion = questions[currentIndex];
 
@@ -203,7 +215,10 @@ function Step2Interview({ interviewData, onFinish }) {
 
 
   useEffect(() => {
-    if (!("webkitSpeechRecognition" in window)) return;
+    if (!("webkitSpeechRecognition" in window)) {
+      console.warn("Speech recognition is not supported in this browser. Please use Google Chrome, MS Edge, or Safari.");
+      return;
+    }
 
     const recognition = new window.webkitSpeechRecognition();
     recognition.lang = "en-US";
@@ -215,6 +230,29 @@ function Step2Interview({ interviewData, onFinish }) {
         event.results[event.results.length - 1][0].transcript;
 
       setAnswer((prev) => prev + " " + transcript);
+    };
+
+    recognition.onend = () => {
+      if (isMicOnRef.current && !isAIPlayingRef.current) {
+        try {
+          recognition.start();
+        } catch (e) {
+          console.warn("Speech recognition auto-restart failed:", e);
+        }
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error:", event.error);
+      setIsMicOn(false);
+
+      if (event.error === "not-allowed") {
+        setMicError("Microphone permission denied. Please allow mic access in your browser settings.");
+      } else if (event.error === "network") {
+        setMicError("Speech recognition network error (Google servers unreachable). You can type your answer manually.");
+      } else {
+        setMicError(`Microphone error: ${event.error}. You can type manually.`);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -236,6 +274,7 @@ function Step2Interview({ interviewData, onFinish }) {
     }
   };
   const toggleMic = () => {
+    setMicError("");
     if (isMicOn) {
       stopMic();
     } else {
@@ -405,6 +444,13 @@ setIsSubmitting(false)
             <div className='text-base sm:text-lg font-semibold text-gray-800 leading-relaxed '>{currentQuestion?.question}</div>
           </div>)
           }
+          {micError && (
+            <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 text-xs sm:text-sm font-medium animate-pulse'>
+              <span>⚠️</span>
+              <span>{micError}</span>
+            </div>
+          )}
+
           <textarea
             placeholder="Type your answer here..."
             onChange={(e) => setAnswer(e.target.value)}

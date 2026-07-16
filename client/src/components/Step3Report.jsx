@@ -142,9 +142,9 @@ function Step3Report({ report }) {
   head: [["#", "Question", "Score", "Feedback"]],
   body: questionWiseScore.map((q, i) => [
     `${i + 1}`,
-    q.question,
-    `${q.score}/10`,
-    q.feedback,
+    `${q.question || ""}\n\nIdeal Answer:\n${q.idealAnswer || "N/A"}`,
+    `${q.score ?? 0}/10`,
+    `${q.feedback || ""}\n\nYour Answer:\n${q.answer || "N/A"}`,
   ]),
   styles: {
     fontSize: 9,
@@ -158,9 +158,9 @@ function Step3Report({ report }) {
   },
   columnStyles: {
     0: { cellWidth: 10, halign: "center" }, // index
-    1: { cellWidth: 55 }, // question
+    1: { cellWidth: 70 }, // question + ideal
     2: { cellWidth: 20, halign: "center" }, // score
-    3: { cellWidth: "auto" }, // feedback
+    3: { cellWidth: "auto" }, // feedback + answer
   },
   alternateRowStyles: {
     fillColor: [249, 250, 251],
@@ -343,6 +343,28 @@ function Step3Report({ report }) {
                         : "No feedback available for this question."}
                     </p>
                   </div>
+
+                  {q.answer && q.answer.trim() !== "" && (
+                    <div className='mt-3 bg-gray-50 border border-gray-200 p-4 rounded-lg'>
+                      <p className='text-xs text-gray-500 font-semibold mb-1'>
+                        Your Answer
+                      </p>
+                      <p className='text-sm text-gray-700 leading-relaxed italic'>
+                        "{q.answer}"
+                      </p>
+                    </div>
+                  )}
+
+                  {q.idealAnswer && q.idealAnswer.trim() !== "" && (
+                    <div className='mt-3 bg-blue-50 border border-blue-200 p-4 rounded-lg'>
+                      <p className='text-xs text-blue-600 font-semibold mb-1 flex items-center gap-1'>
+                        <span>💡</span> Exemplar Answer (AI Playbook Guide)
+                      </p>
+                      <p className='text-sm text-gray-700 leading-relaxed font-medium'>
+                        {q.idealAnswer}
+                      </p>
+                    </div>
+                  )}
 
                 </div>
               ))}

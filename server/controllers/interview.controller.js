@@ -233,6 +233,9 @@ export const submitAnswer = async (req, res) => {
     // If no answer
     if (!answer) {
       question.score = 0;
+      question.confidence = 0;
+      question.communication = 0;
+      question.correctness = 0;
       question.feedback = "You did not submit an answer.";
       question.answer = "";
 
@@ -246,6 +249,9 @@ export const submitAnswer = async (req, res) => {
     // If time exceeded
     if (timeTaken > question.timeLimit) {
       question.score = 0;
+      question.confidence = 0;
+      question.communication = 0;
+      question.correctness = 0;
       question.feedback = "Time limit exceeded. Answer not evaluated.";
       question.answer = answer;
 

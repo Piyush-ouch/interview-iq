@@ -29,6 +29,7 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voiceGender, setVoiceGender] = useState("female");
   const [subtitle, setSubtitle] = useState("");
+  const [isAudioOnly, setIsAudioOnly] = useState(false);
 
 
   const videoRef = useRef(null);
@@ -115,7 +116,9 @@ function Step2Interview({ interviewData, onFinish }) {
 
       utterance.onend = () => {
         videoRef.current?.pause();
-        videoRef.current.currentTime = 0;
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+        }
         setIsAIPlaying(false);
 
 
@@ -333,16 +336,77 @@ setIsSubmitting(false)
 
         {/* video section */}
         <div className='w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200'>
+          
+          {/* Mode Switcher */}
+          <div className="w-full max-w-md flex justify-between items-center bg-gray-50 border border-gray-200 rounded-xl p-3 shadow-xs">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Interview Mode</span>
+            <button
+              onClick={() => setIsAudioOnly(!isAudioOnly)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition cursor-pointer"
+            >
+              {isAudioOnly ? "📹 Show Video" : "🎧 Audio-Only"}
+            </button>
+          </div>
+
           <div className='w-full max-w-md rounded-2xl overflow-hidden shadow-xl'>
-            <video
-              src={videoSource}
-              key={videoSource}
-              ref={videoRef}
-              muted
-              playsInline
-              preload="auto"
-              className="w-full h-auto object-cover"
-            />
+            {isAudioOnly ? (
+              <div className='w-full aspect-video bg-gradient-to-br from-gray-900 to-slate-800 flex flex-col items-center justify-center p-6 relative text-white border border-gray-800 rounded-2xl'>
+                <style>{`
+                  @keyframes bounceBar {
+                    0%, 100% { height: 6px; }
+                    50% { height: 24px; }
+                  }
+                  @keyframes pulseRing {
+                    0% { transform: scale(0.95); opacity: 0.5; }
+                    50% { transform: scale(1.15); opacity: 0.3; }
+                    100% { transform: scale(1.35); opacity: 0; }
+                  }
+                  .animate-pulse-ring {
+                    animation: pulseRing 2s cubic-bezier(0.215, 0.610, 0.355, 1) infinite;
+                  }
+                `}</style>
+
+                {/* Pulsating Ring (AI Speaking Indicator) */}
+                {isAIPlaying && (
+                  <div className="absolute w-24 h-24 rounded-full border border-emerald-500/30 animate-pulse-ring"></div>
+                )}
+
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg mb-4 z-10">
+                  <span className="text-xl font-bold tracking-wider">AI</span>
+                </div>
+                
+                <h3 className="font-semibold text-xs sm:text-sm z-10 text-emerald-400">AI Assistant ({voiceGender})</h3>
+                <p className="text-[10px] text-gray-400 mt-1 flex items-center gap-1.5 z-10">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Connected (Audio-Only)
+                </p>
+
+                {/* Audio Waveform */}
+                <div className="flex items-end gap-1 h-6 mt-4">
+                  {[1, 2, 3, 4, 5].map((bar) => (
+                    <div 
+                      key={bar}
+                      className="w-1 bg-emerald-400 rounded-full transition-all duration-300"
+                      style={{ 
+                        animation: isAIPlaying ? `bounceBar 0.8s ease-in-out infinite` : 'none',
+                        animationDelay: `${bar * 0.12}s`,
+                        height: isAIPlaying ? '24px' : '6px'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <video
+                src={videoSource}
+                key={videoSource}
+                ref={videoRef}
+                muted
+                playsInline
+                preload="auto"
+                className="w-full h-auto object-cover"
+              />
+            )}
           </div>
 
           {/* subtitle */}

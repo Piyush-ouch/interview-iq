@@ -3,6 +3,7 @@ import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { askAi } from "../services/openRouter.service.js";
 import User from "../models/user.model.js";
 import Interview from "../models/interview.model.js";
+import { parseJSONFromAI } from "../utils/jsonParser.js";
 
 export const analyzeResume = async (req, res) => {
   try {
@@ -18,28 +19,35 @@ export const analyzeResume = async (req, res) => {
 
     let resumeText = "";
 
-    // Extract text from all pages
+    // Layout-aware text extraction to preserve section headers, lists, and line breaks
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      const content = await page.getTextContent();
-
-      const pageText = content.items.map(item => item.str).join(" ");
+      const textContent = await page.getTextContent();
+      
+      let lastY, pageText = '';
+      for (const item of textContent.items) {
+        if (lastY === undefined || Math.abs(item.transform[5] - lastY) < 2) {
+          pageText += (item.str || '') + ' ';
+        } else {
+          pageText += '\n' + (item.str || '') + ' ';
+        }
+        lastY = item.transform[5];
+      }
       resumeText += pageText + "\n";
     }
 
-
     resumeText = resumeText
-      .replace(/\s+/g, " ")
+      .replace(/[ \t]+/g, " ")
       .trim();
 
     const messages = [
       {
         role: "system",
         content: `
-Extract structured data from resume.
+Extract structured data from the resume text.
+Identify the target job role, total years of experience (approximate if not explicitly stated), key projects, and technical skills.
 
-Return strictly JSON:
-
+Return strictly a JSON object:
 {
   "role": "string",
   "experience": "string",
@@ -54,19 +62,16 @@ Return strictly JSON:
       }
     ];
 
-
     const aiResponse = await askAi(messages)
-
-    const parsed = JSON.parse(aiResponse);
+    const parsed = parseJSONFromAI(aiResponse);
 
     fs.unlinkSync(filepath)
 
-
     res.json({
-      role: parsed.role,
-      experience: parsed.experience,
-      projects: parsed.projects,
-      skills: parsed.skills,
+      role: parsed.role || "Software Developer",
+      experience: parsed.experience || "Entry Level",
+      projects: parsed.projects || [],
+      skills: parsed.skills || [],
       resumeText
     });
 
@@ -134,34 +139,29 @@ export const generateQuestion = async (req, res) => {
     }
 
     const messages = [
-
       {
         role: "system",
         content: `
-You are a real human interviewer conducting a professional interview.
+You are a professional human interviewer conducting a highly personalized mock interview.
 
-Speak in simple, natural English as if you are directly talking to the candidate.
+Analyze the candidate's target Role, Experience level, Interview Mode (HR or Technical), and their Resume (including specific Projects and Skills).
 
 Generate exactly 5 interview questions.
 
+Difficulty & Focus Progression:
+- Question 1 (Easy): Warm-up question tailored directly to their background, asking them to introduce themselves or highlight a project/skill from their resume.
+- Question 2 (Easy): Scenario-based question focused on their core technical skills or HR behavior.
+- Question 3 (Medium): Technical question targeting a specific project listed on their resume, asking how they implemented a feature or solved a challenge.
+- Question 4 (Medium): Deep dive into one of their listed technical skills or a hypothetical system design/scenario.
+- Question 5 (Hard): A challenging, high-level question (architecture, design, or optimization) tailored to their target role and experience level.
+
 Strict Rules:
+- Each question must be a single, complete sentence.
+- Keep language simple, practical, and conversational.
 - Each question must contain between 15 and 25 words.
-- Each question must be a single complete sentence.
 - Do NOT number them.
-- Do NOT add explanations.
-- Do NOT add extra text before or after.
+- Do NOT add explanations or extra text.
 - One question per line only.
-- Keep language simple and conversational.
-- Questions must feel practical and realistic.
-
-Difficulty progression:
-Question 1 → easy  
-Question 2 → easy  
-Question 3 → medium  
-Question 4 → medium  
-Question 5 → hard  
-
-Make questions based on the candidate’s role, experience,interviewMode, projects, skills, and resume details.
 `
       }
       ,

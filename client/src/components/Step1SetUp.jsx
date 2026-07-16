@@ -39,8 +39,6 @@ function Step1SetUp({ onStart }) {
 
             console.log(result.data)
 
-            setRole(result.data.role || "");
-            setExperience(result.data.experience || "");
             setProjects(result.data.projects || []);
             setSkills(result.data.skills || []);
             setResumeText(result.data.resumeText || "");

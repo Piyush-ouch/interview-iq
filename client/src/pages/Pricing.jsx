@@ -1,15 +1,18 @@
 import React, { useState } from 'react'
 import { FaArrowLeft, FaCheckCircle } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import axios from 'axios';
 import { ServerUrl } from '../App';
 import { useDispatch } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
+
 function Pricing() {
   const navigate = useNavigate()
   const [selectedPlan, setSelectedPlan] = useState("free");
   const [loadingPlan, setLoadingPlan] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [addedCredits, setAddedCredits] = useState(0);
   const dispatch = useDispatch()
 
   const plans = [
@@ -85,9 +88,12 @@ function Pricing() {
         const verifypay = await axios.post(ServerUrl + "/api/payment/verify" ,response , {withCredentials:true})
         dispatch(setUserData(verifypay.data.user))
 
-          alert("Payment Successful 🎉 Credits Added!");
-          navigate("/")
+        setAddedCredits(plan.credits)
+        setShowSuccessModal(true)
 
+        setTimeout(() => {
+          navigate("/")
+        }, 3000)
       },
       theme:{
         color: "#10b981",
@@ -100,8 +106,8 @@ function Pricing() {
 
       setLoadingPlan(null);
     } catch (error) {
-     console.log(error)
-     setLoadingPlan(null);
+      console.log(error)
+      setLoadingPlan(null);
     }
   }
 
@@ -219,6 +225,43 @@ function Pricing() {
         })}
       </div>
 
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-gray-100 flex flex-col items-center space-y-6"
+            >
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center">
+                <FaCheckCircle className="text-emerald-600 text-3xl animate-bounce" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">Payment Successful!</h3>
+                <p className="text-gray-500 mt-2 text-sm leading-relaxed">
+                  {addedCredits} credits have been successfully added to your account.
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/")}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition"
+              >
+                Go to Dashboard
+              </button>
+              <p className="text-xs text-gray-400">
+                Redirecting automatically in 3 seconds...
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

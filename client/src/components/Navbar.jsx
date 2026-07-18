@@ -1,15 +1,15 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion } from "motion/react"
 import { BsRobot, BsCoin } from "react-icons/bs";
 import { HiOutlineLogout } from "react-icons/hi";
 import { FaUserAstronaut } from "react-icons/fa";
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ServerUrl } from '../App';
 import { setUserData } from '../redux/userSlice';
 import AuthModel from './AuthModel';
+
 function Navbar() {
     const {userData} = useSelector((state)=>state.user)
     const [showCreditPopup,setShowCreditPopup] = useState(false)
@@ -17,6 +17,24 @@ function Navbar() {
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const [showAuth, setShowAuth] = useState(false);
+
+    const creditRef = useRef(null);
+    const userRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (creditRef.current && !creditRef.current.contains(event.target)) {
+                setShowCreditPopup(false);
+            }
+            if (userRef.current && !userRef.current.contains(event.target)) {
+                setShowUserPopup(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -46,7 +64,7 @@ function Navbar() {
             </div>
 
             <div className='flex items-center gap-6  relative'>
-                <div className='relative'>
+                <div ref={creditRef} className='relative'>
                     <button onClick={()=>{
                         if(!userData){
                             setShowAuth(true)
@@ -68,7 +86,7 @@ function Navbar() {
                     )}
                 </div>
 
-                <div className='relative'>
+                <div ref={userRef} className='relative'>
                     <button
                     onClick={()=>{
                          if(!userData){

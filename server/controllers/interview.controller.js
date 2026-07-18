@@ -455,6 +455,114 @@ export const getInterviewReport = async (req,res) => {
   }
 }
 
+export const getCumulativeAnalytics = async (req, res) => {
+  try {
+    const interviews = await Interview.find({
+      userId: req.userId,
+      status: "completed"
+    })
+    .sort({ createdAt: 1 });
+
+    if (interviews.length === 0) {
+      return res.json({
+        hasData: false,
+        message: "No completed interviews found yet."
+      });
+    }
+
+    let totalScoreSum = 0;
+    let totalConfidenceSum = 0;
+    let totalCommunicationSum = 0;
+    let totalCorrectnessSum = 0;
+    let totalQuestionsCount = 0;
+
+    const trend = interviews.map((interview) => {
+      let intConfidence = 0;
+      let intCommunication = 0;
+      let intCorrectness = 0;
+      const qCount = interview.questions.length;
+
+      interview.questions.forEach((q) => {
+        intConfidence += q.confidence || 0;
+        intCommunication += q.communication || 0;
+        intCorrectness += q.correctness || 0;
+      });
+
+      const avgConf = qCount ? intConfidence / qCount : 0;
+      const avgComm = qCount ? intCommunication / qCount : 0;
+      const avgCorr = qCount ? intCorrectness / qCount : 0;
+
+      totalScoreSum += interview.finalScore || 0;
+      totalConfidenceSum += intConfidence;
+      totalCommunicationSum += intCommunication;
+      totalCorrectnessSum += intCorrectness;
+      totalQuestionsCount += qCount;
+
+      return {
+        date: new Date(interview.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        role: interview.role,
+        score: Number((interview.finalScore || 0).toFixed(1)),
+        confidence: Number(avgConf.toFixed(1)),
+        communication: Number(avgComm.toFixed(1)),
+        correctness: Number(avgCorr.toFixed(1))
+      };
+    });
+
+    const totalInterviews = interviews.length;
+    const avgOverallScore = Number((totalScoreSum / totalInterviews).toFixed(1));
+    const avgConfidence = totalQuestionsCount ? Number((totalConfidenceSum / totalQuestionsCount).toFixed(1)) : 0;
+    const avgCommunication = totalQuestionsCount ? Number((totalCommunicationSum / totalQuestionsCount).toFixed(1)) : 0;
+    const avgCorrectness = totalQuestionsCount ? Number((totalCorrectnessSum / totalQuestionsCount).toFixed(1)) : 0;
+
+    const insights = [];
+    if (totalInterviews >= 2) {
+      const first = trend[0];
+      const last = trend[trend.length - 1];
+
+      const scoreDiff = last.score - first.score;
+      const confDiff = last.confidence - first.confidence;
+      const commDiff = last.communication - first.communication;
+      const corrDiff = last.correctness - first.correctness;
+
+      if (scoreDiff > 0) {
+        insights.push(`Your overall interview score has improved by ${Math.round(scoreDiff * 10)}% since your first try.`);
+      } else if (scoreDiff < 0) {
+        insights.push(`Your overall score dropped slightly. Try reviewing the AI prep guides before your next session.`);
+      }
+
+      if (confDiff > 0) {
+        insights.push(`Great progress! Your confidence rating has increased by ${Math.round(confDiff * 10)}% over time.`);
+      } else if (confDiff < 0) {
+        insights.push(`Your speaking confidence dropped by ${Math.round(Math.abs(confDiff) * 10)}%. Focus on pacing and taking deep breaths.`);
+      }
+
+      if (corrDiff > 0) {
+        insights.push(`Correctness is up by ${Math.round(corrDiff * 10)}%, meaning your technical answers are becoming more precise.`);
+      } else if (corrDiff < 0) {
+        insights.push(`Technical correctness dropped by ${Math.round(Math.abs(corrDiff) * 10)}%. Spend some time reviewing key domain concepts.`);
+      }
+    } else {
+      insights.push("Complete at least 2 interviews to generate comparison trends and performance insights.");
+    }
+
+    return res.json({
+      hasData: true,
+      stats: {
+        totalInterviews,
+        avgOverallScore,
+        avgConfidence,
+        avgCommunication,
+        avgCorrectness
+      },
+      trend,
+      insights
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: `Failed to calculate analytics: ${error.message}` });
+  }
+};
+
 
 
 

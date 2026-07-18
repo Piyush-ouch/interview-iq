@@ -412,13 +412,16 @@ setIsSubmitting(false)
             className="flex-1 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800" />
 
 
-         {!feedback ? ( <div className='flex items-center gap-4 mt-6'>
-            <motion.button
-              onClick={toggleMic}
-              whileTap={{ scale: 0.9 }}
-              className='w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg'>
-              {isMicOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20}/>}
-            </motion.button>
+          {!feedback ? ( <div className='flex items-center gap-4 mt-6'>
+            <div className='flex items-center gap-2 bg-gray-50 rounded-full pr-4 p-1 border border-gray-200 shadow-sm'>
+              <motion.button
+                onClick={toggleMic}
+                whileTap={{ scale: 0.9 }}
+                className='w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg'>
+                {isMicOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20}/>}
+              </motion.button>
+              <VoiceVisualizer isActive={isMicOn && !isAIPlaying} />
+            </div>
 
             <motion.button
             onClick={submitAnswer}
@@ -450,6 +453,104 @@ setIsSubmitting(false)
 
     </div>
   )
+}
+
+function VoiceVisualizer({ isActive }) {
+  const [volume, setVolume] = useState(0);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const streamRef = useRef(null);
+  const animationFrameRef = useRef(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      cleanup();
+      return;
+    }
+
+    async function initAudio() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContextClass();
+        audioContextRef.current = audioCtx;
+
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        analyserRef.current = analyser;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const updateVolume = () => {
+          if (!analyserRef.current) return;
+          analyserRef.current.getByteFrequencyData(dataArray);
+
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / dataArray.length;
+          setVolume(average / 128);
+
+          animationFrameRef.current = requestAnimationFrame(updateVolume);
+        };
+
+        animationFrameRef.current = requestAnimationFrame(updateVolume);
+
+      } catch (err) {
+        console.warn("Could not access microphone for visualizer:", err);
+      }
+    }
+
+    initAudio();
+
+    return () => {
+      cleanup();
+    };
+  }, [isActive]);
+
+  const cleanup = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+    setVolume(0);
+  };
+
+  const barCount = 4;
+  
+  return (
+    <div className="flex items-center justify-center gap-[3px] h-6 px-1 w-8">
+      {Array.from({ length: barCount }).map((_, i) => {
+        const scale = isActive ? 0.2 + volume * (0.8 + Math.sin(i * 1.5) * 0.4) : 0.25;
+        const boundedScale = Math.min(Math.max(scale, 0.15), 2.5);
+        
+        return (
+          <div
+            key={i}
+            className="w-[3px] bg-emerald-500 rounded-full transition-transform duration-75"
+            style={{
+              height: '16px',
+              transform: `scaleY(${boundedScale})`,
+              transformOrigin: 'center'
+            }}
+          />
+        );
+      })}
+    </div>
+  );
 }
 
 export default Step2Interview

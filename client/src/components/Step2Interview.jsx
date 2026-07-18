@@ -32,6 +32,7 @@ function Step2Interview({ interviewData, onFinish }) {
 
 
   const videoRef = useRef(null);
+  const utteranceRef = useRef(null);
 
   const currentQuestion = questions[currentIndex];
 
@@ -98,6 +99,7 @@ function Step2Interview({ interviewData, onFinish }) {
         .replace(/\./g, ". ... ");
 
       const utterance = new SpeechSynthesisUtterance(humanText);
+      utteranceRef.current = utterance;
 
       utterance.voice = selectedVoice;
 
@@ -115,8 +117,11 @@ function Step2Interview({ interviewData, onFinish }) {
 
       utterance.onend = () => {
         videoRef.current?.pause();
-        videoRef.current.currentTime = 0;
+        if (videoRef.current) {
+          videoRef.current.currentTime = 0;
+        }
         setIsAIPlaying(false);
+        utteranceRef.current = null;
 
 
 

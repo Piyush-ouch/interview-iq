@@ -5,6 +5,7 @@ import { ServerUrl } from '../App'
 import { FaArrowLeft } from 'react-icons/fa'
 function InterviewHistory() {
     const [interviews, setInterviews] = useState([])
+    const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -16,6 +17,8 @@ function InterviewHistory() {
 
             } catch (error) {
                 console.log(error)
+            } finally {
+                setLoading(false)
             }
 
         }
@@ -46,7 +49,28 @@ function InterviewHistory() {
                 </div>
 
 
-                {interviews.length === 0 ?
+                {loading ? (
+                    <div className="grid gap-6">
+                        {[1, 2, 3].map((n) => (
+                            <div key={n} className="bg-white p-6 rounded-2xl shadow-md border border-gray-100 animate-pulse">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                    <div className="space-y-3 flex-1">
+                                        <div className="h-5 bg-gray-200 rounded-md w-1/3"></div>
+                                        <div className="h-4 bg-gray-200 rounded-md w-1/4"></div>
+                                        <div className="h-3 bg-gray-200 rounded-md w-1/6"></div>
+                                    </div>
+                                    <div className="flex items-center gap-6">
+                                        <div className="space-y-2">
+                                            <div className="h-6 bg-gray-200 rounded-md w-12 ml-auto"></div>
+                                            <div className="h-3 bg-gray-200 rounded-md w-16"></div>
+                                        </div>
+                                        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : interviews.length === 0 ? (
                     <div className='bg-white p-10 rounded-2xl shadow text-center'>
                         <p className='text-gray-500'>
                             No interviews found. Start your first interview.
@@ -54,7 +78,7 @@ function InterviewHistory() {
 
                     </div>
 
-                    :
+                ) : (
 
                     <div className='grid gap-6'>
                         {interviews.map((item, index) => (
@@ -108,7 +132,7 @@ function InterviewHistory() {
                         }
 
                     </div>
-                }
+                )}
             </div>
 
         </div>

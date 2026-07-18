@@ -1,5 +1,5 @@
 import React from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useNavigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Auth from './pages/auth'
 import { useEffect } from 'react'
@@ -14,8 +14,31 @@ import InterviewReport from './pages/InterviewReport'
 export const ServerUrl  = "http://localhost:8000"
 
 function App() {
-
   const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (
+          error.response &&
+          error.response.status === 400 &&
+          (error.response.data?.message?.toLowerCase().includes("token") || 
+           error.response.data?.message?.toLowerCase().includes("auth"))
+        ) {
+          dispatch(setUserData(null));
+          navigate("/auth");
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [dispatch, navigate]);
+
   useEffect(()=>{
     const getUser = async () => {
       try {

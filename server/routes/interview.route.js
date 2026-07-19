@@ -8,13 +8,15 @@ import {
   getInterviewReport, 
   getMyInterviews, 
   submitAnswer,
-  getCumulativeAnalytics 
+  getCumulativeAnalytics,
+  generateRemedialQuestions
 } from "../controllers/interview.controller.js"
 
 const interviewRouter = express.Router()
 
 interviewRouter.post("/resume",isAuth,upload.single("resume"),analyzeResume)
 interviewRouter.post("/generate-questions",isAuth,generateQuestion)
+interviewRouter.post("/generate-remedial",isAuth,generateRemedialQuestions)
 interviewRouter.post("/submit-answer",isAuth,submitAnswer)
 interviewRouter.post("/finish",isAuth,finishInterview)
 

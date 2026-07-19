@@ -580,6 +580,126 @@ export const getCumulativeAnalytics = async (req, res) => {
   }
 };
 
+export const generateRemedialQuestions = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.credits < 30) {
+      return res.status(400).json({ message: "Not enough credits for Remedial Practice. Minimum 30 credits required." });
+    }
+
+    // Retrieve user's completed interviews to discover weak areas
+    const completedInterviews = await Interview.find({
+      userId: req.userId,
+      status: "completed"
+    }).sort({ createdAt: -1 }).limit(10);
+
+    if (!completedInterviews || completedInterviews.length === 0) {
+      return res.status(400).json({ message: "No completed interviews found. Complete at least 1 interview to unlock Remedial Mode." });
+    }
+
+    // Collect questions where score or correctness < 7
+    const weakItems = [];
+    let primaryRole = completedInterviews[0].role || "Software Engineer";
+    let primaryExperience = completedInterviews[0].experience || "Intermediate";
+
+    completedInterviews.forEach((interview) => {
+      interview.questions.forEach((q) => {
+        if ((q.score !== undefined && q.score < 7) || (q.correctness !== undefined && q.correctness < 7)) {
+          weakItems.push(`Question: ${q.question} | Score: ${q.score}/10 | Feedback: ${q.feedback || "Needs improvement"}`);
+        }
+      });
+    });
+
+    // Fallback: If no weak items < 7 exist, select lowest scoring items overall
+    if (weakItems.length === 0) {
+      completedInterviews.forEach((interview) => {
+        interview.questions.forEach((q) => {
+          weakItems.push(`Question: ${q.question} | Score: ${q.score || 7}/10 | Feedback: ${q.feedback || "Refine depth"}`);
+        });
+      });
+    }
+
+    const weakContext = weakItems.slice(0, 5).join("\n");
+
+    const messages = [
+      {
+        role: "system",
+        content: `
+You are an expert technical interviewer creating a targeted Remedial Practice session.
+
+Goal: Analyze the candidate's previous low-scoring questions and feedback, then generate EXACTLY 3 focused follow-up practice questions designed specifically to test and improve their weak spots.
+
+Strict Rules:
+- Generate exactly 3 interview questions.
+- Each question must contain between 15 and 25 words.
+- Each question must be a single complete sentence.
+- Do NOT number them.
+- Do NOT add explanations or extra text.
+- One question per line only.
+- Focus directly on strengthening concepts where candidate scored low in past sessions.
+`
+      },
+      {
+        role: "user",
+        content: `
+Target Role: ${primaryRole}
+Target Experience Level: ${primaryExperience}
+
+Candidate's Previous Weak Questions & Feedback:
+${weakContext}
+`
+      }
+    ];
+
+    const aiResponse = await askAi(messages);
+
+    if (!aiResponse || !aiResponse.trim()) {
+      return res.status(500).json({ message: "AI returned empty response for remedial questions." });
+    }
+
+    const questionsArray = aiResponse
+      .split("\n")
+      .map(q => q.trim())
+      .filter(q => q.length > 0)
+      .slice(0, 3);
+
+    if (questionsArray.length === 0) {
+      return res.status(500).json({ message: "Failed to generate remedial questions." });
+    }
+
+    user.credits -= 30;
+    await user.save();
+
+    const interview = await Interview.create({
+      userId: user._id,
+      role: primaryRole,
+      experience: primaryExperience,
+      mode: "Remedial",
+      resumeText: "Remedial Weak Spot Focus Session",
+      questions: questionsArray.map((q, index) => ({
+        question: q,
+        difficulty: ["medium", "medium", "hard"][index],
+        timeLimit: [90, 90, 120][index],
+      }))
+    });
+
+    return res.status(200).json({
+      interviewId: interview._id,
+      creditsLeft: user.credits,
+      userName: user.name,
+      questions: interview.questions
+    });
+
+  } catch (error) {
+    return res.status(500).json({ message: `Failed to generate remedial session: ${error.message}` });
+  }
+};
+
+
 
 
 

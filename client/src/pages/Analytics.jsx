@@ -9,6 +9,7 @@ function Analytics() {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [remedialLoading, setRemedialLoading] = useState(false)
     const navigate = useNavigate()
 
     const fetchAnalytics = async () => {
@@ -22,6 +23,18 @@ function Analytics() {
             setError(err.response?.data?.message || 'Failed to calculate performance analytics. Please try again.')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleStartRemedial = async () => {
+        setRemedialLoading(true)
+        try {
+            const response = await axios.post(ServerUrl + '/api/interview/generate-remedial', {}, { withCredentials: true })
+            navigate('/interview', { state: { interviewData: response.data } })
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to start remedial practice round.')
+        } finally {
+            setRemedialLoading(false)
         }
     }
 
@@ -212,12 +225,25 @@ function Analytics() {
                             ))}
                         </div>
 
-                        <div className="mt-8 pt-6 border-t border-gray-100">
+                        <div className="mt-8 pt-6 border-t border-gray-100 space-y-3">
+                            <button
+                                onClick={handleStartRemedial}
+                                disabled={remedialLoading}
+                                className="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2 shadow-sm"
+                            >
+                                {remedialLoading ? (
+                                    <span>Generating Remedial Round...</span>
+                                ) : (
+                                    <>
+                                        <FaRegLightbulb /> Target Practice: Focus Weak Spots (3 Qs)
+                                    </>
+                                )}
+                            </button>
                             <button
                                 onClick={() => navigate('/interview')}
                                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition"
                             >
-                                Start New Practice Round
+                                Start Standard Practice Round
                             </button>
                         </div>
                     </div>

@@ -5,14 +5,15 @@ import User from "../models/user.model.js";
 import Interview from "../models/interview.model.js";
 
 export const analyzeResume = async (req, res) => {
+  let filepath = null;
   try {
     if (!req.file) {
       return res.status(400).json({ message: "Resume required" });
     }
-    const filepath = req.file.path
+    filepath = req.file.path;
 
-    const fileBuffer = await fs.promises.readFile(filepath)
-    const uint8Array = new Uint8Array(fileBuffer)
+    const fileBuffer = await fs.promises.readFile(filepath);
+    const uint8Array = new Uint8Array(fileBuffer);
 
     const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
 
@@ -26,7 +27,6 @@ export const analyzeResume = async (req, res) => {
       const pageText = content.items.map(item => item.str).join(" ");
       resumeText += pageText + "\n";
     }
-
 
     resumeText = resumeText
       .replace(/\s+/g, " ")
@@ -54,15 +54,11 @@ Return strictly JSON:
       }
     ];
 
-
-    const aiResponse = await askAi(messages)
+    const aiResponse = await askAi(messages);
 
     const parsed = JSON.parse(aiResponse);
 
-    fs.unlinkSync(filepath)
-
-
-    res.json({
+    return res.json({
       role: parsed.role,
       experience: parsed.experience,
       projects: parsed.projects,
@@ -72,12 +68,15 @@ Return strictly JSON:
 
   } catch (error) {
     console.error(error);
-
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-
     return res.status(500).json({ message: error.message });
+  } finally {
+    if (filepath && fs.existsSync(filepath)) {
+      try {
+        fs.unlinkSync(filepath);
+      } catch (unlinkErr) {
+        console.error(`Failed to cleanup temp file ${filepath}:`, unlinkErr);
+      }
+    }
   }
 };
 

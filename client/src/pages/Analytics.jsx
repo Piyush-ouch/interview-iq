@@ -8,19 +8,24 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 function Analytics() {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
     const navigate = useNavigate()
 
-    useEffect(() => {
-        const fetchAnalytics = async () => {
-            try {
-                const response = await axios.get(ServerUrl + '/api/interview/analytics', { withCredentials: true })
-                setData(response.data)
-            } catch (err) {
-                console.error(err)
-            } finally {
-                setLoading(false)
-            }
+    const fetchAnalytics = async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const response = await axios.get(ServerUrl + '/api/interview/analytics', { withCredentials: true })
+            setData(response.data)
+        } catch (err) {
+            console.error(err)
+            setError(err.response?.data?.message || 'Failed to calculate performance analytics. Please try again.')
+        } finally {
+            setLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchAnalytics()
     }, [])
 
@@ -32,6 +37,34 @@ function Analytics() {
                         <FaChartLine size={24} />
                     </div>
                     <p className="text-gray-500 font-semibold">Generating performance profile...</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-emerald-50 py-16 px-6 flex items-center justify-center">
+                <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-xl border border-red-100 space-y-6">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600 font-bold text-xl">
+                        !
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800">Analytics Error</h2>
+                        <p className="text-red-500 mt-2 text-sm leading-relaxed">{error}</p>
+                    </div>
+                    <button
+                        onClick={fetchAnalytics}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold transition shadow-md"
+                    >
+                        Retry Loading Analytics
+                    </button>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="text-sm text-gray-500 hover:text-emerald-600 block mx-auto font-medium"
+                    >
+                        Go back home
+                    </button>
                 </div>
             </div>
         )

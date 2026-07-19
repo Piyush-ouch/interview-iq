@@ -476,7 +476,7 @@ export const getCumulativeAnalytics = async (req, res) => {
     let totalCorrectnessSum = 0;
     let totalQuestionsCount = 0;
 
-    const trend = interviews.map((interview) => {
+    const trend = interviews.map((interview, index) => {
       let intConfidence = 0;
       let intCommunication = 0;
       let intCorrectness = 0;
@@ -498,8 +498,11 @@ export const getCumulativeAnalytics = async (req, res) => {
       totalCorrectnessSum += intCorrectness;
       totalQuestionsCount += qCount;
 
+      const dateStr = new Date(interview.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const timeStr = new Date(interview.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+
       return {
-        date: new Date(interview.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        date: `${dateStr} (${timeStr})`,
         role: interview.role,
         score: Number((interview.finalScore || 0).toFixed(1)),
         confidence: Number(avgConf.toFixed(1)),
@@ -524,22 +527,36 @@ export const getCumulativeAnalytics = async (req, res) => {
       const commDiff = last.communication - first.communication;
       const corrDiff = last.correctness - first.correctness;
 
-      if (scoreDiff > 0) {
-        insights.push(`Your overall interview score has improved by ${Math.round(scoreDiff * 10)}% since your first try.`);
-      } else if (scoreDiff < 0) {
-        insights.push(`Your overall score dropped slightly. Try reviewing the AI prep guides before your next session.`);
+      if (scoreDiff > 0 && first.score > 0) {
+        const pct = Math.round((scoreDiff / first.score) * 100);
+        insights.push(`Your overall interview score has improved by ${pct}% since your baseline try.`);
+      } else if (scoreDiff < 0 && first.score > 0) {
+        const pct = Math.round((Math.abs(scoreDiff) / first.score) * 100);
+        insights.push(`Your overall score dropped by ${pct}%. Try reviewing AI prep playbooks before your next session.`);
       }
 
-      if (confDiff > 0) {
-        insights.push(`Great progress! Your confidence rating has increased by ${Math.round(confDiff * 10)}% over time.`);
-      } else if (confDiff < 0) {
-        insights.push(`Your speaking confidence dropped by ${Math.round(Math.abs(confDiff) * 10)}%. Focus on pacing and taking deep breaths.`);
+      if (confDiff > 0 && first.confidence > 0) {
+        const pct = Math.round((confDiff / first.confidence) * 100);
+        insights.push(`Great progress! Your speaking confidence rating has increased by ${pct}% over time.`);
+      } else if (confDiff < 0 && first.confidence > 0) {
+        const pct = Math.round((Math.abs(confDiff) / first.confidence) * 100);
+        insights.push(`Your speaking confidence dropped by ${pct}%. Focus on steady pacing and taking deep breaths.`);
       }
 
-      if (corrDiff > 0) {
-        insights.push(`Correctness is up by ${Math.round(corrDiff * 10)}%, meaning your technical answers are becoming more precise.`);
-      } else if (corrDiff < 0) {
-        insights.push(`Technical correctness dropped by ${Math.round(Math.abs(corrDiff) * 10)}%. Spend some time reviewing key domain concepts.`);
+      if (commDiff > 0 && first.communication > 0) {
+        const pct = Math.round((commDiff / first.communication) * 100);
+        insights.push(`Communication clarity improved by ${pct}%, reflecting clearer structure and word choice.`);
+      } else if (commDiff < 0 && first.communication > 0) {
+        const pct = Math.round((Math.abs(commDiff) / first.communication) * 100);
+        insights.push(`Communication delivery score dipped by ${pct}%. Focus on organizing key points simply.`);
+      }
+
+      if (corrDiff > 0 && first.correctness > 0) {
+        const pct = Math.round((corrDiff / first.correctness) * 100);
+        insights.push(`Technical correctness is up by ${pct}%, meaning your answers are becoming more precise.`);
+      } else if (corrDiff < 0 && first.correctness > 0) {
+        const pct = Math.round((Math.abs(corrDiff) / first.correctness) * 100);
+        insights.push(`Technical correctness dropped by ${pct}%. Spend some time reviewing key domain concepts.`);
       }
     } else {
       insights.push("Complete at least 2 interviews to generate comparison trends and performance insights.");

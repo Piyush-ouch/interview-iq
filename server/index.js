@@ -11,6 +11,7 @@ import paymentRouter from "./routes/payment.route.js"
 import bookingRouter from "./routes/booking.route.js"
 import questionBankRouter from "./routes/questionBank.route.js"
 import analyticsRouter from "./routes/analytics.route.js"
+import resumeOptimizerRouter from "./routes/resumeOptimizer.route.js"
 import { initReminderScheduler } from "./services/reminder.service.js"
 import { seedQuestionBankIfEmpty } from "./services/questionBankSeed.js"
 
@@ -30,6 +31,7 @@ app.use("/api/payment" , paymentRouter)
 app.use("/api/booking", bookingRouter)
 app.use("/api/question-bank", questionBankRouter)
 app.use("/api/analytics", analyticsRouter)
+app.use("/api/resume-optimizer", resumeOptimizerRouter)
 
 const PORT = process.env.PORT || 6000
 app.listen(PORT , async ()=>{

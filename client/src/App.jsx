@@ -13,6 +13,7 @@ import InterviewReport from './pages/InterviewReport'
 import ScheduleInterview from './pages/ScheduleInterview'
 import QuestionBank from './pages/QuestionBank'
 import Analytics from './pages/Analytics'
+import ResumeOptimizer from './pages/ResumeOptimizer'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -43,6 +44,7 @@ function App() {
       <Route path='/schedule' element={<ScheduleInterview/>}/>
       <Route path='/question-bank' element={<QuestionBank/>}/>
       <Route path='/analytics' element={<Analytics/>}/>
+      <Route path='/resume-optimizer' element={<ResumeOptimizer/>}/>
     </Routes>
   )
 }

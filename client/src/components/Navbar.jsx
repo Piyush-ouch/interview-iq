@@ -83,12 +83,16 @@ function Navbar() {
                     </button>
 
                     {showUserPopup && (
-                        <div className='absolute right-0 mt-3 w-60 bg-white shadow-xl border border-gray-200 rounded-xl p-4 z-50'>
+                        <div className='absolute right-0 mt-3 w-64 bg-white shadow-xl border border-gray-200 rounded-xl p-4 z-50'>
                             <p className='text-md text-blue-500 font-medium mb-2'>{userData?.name}</p>
 
+                            <button onClick={()=>{ navigate("/resume-optimizer"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
+                              Resume Optimizer
+                              <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">ATS AI</span>
+                            </button>
                             <button onClick={()=>{ navigate("/analytics"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
                               Career Insights
-                              <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">Insights</span>
+                              <span className="bg-indigo-100 text-indigo-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">Insights</span>
                             </button>
                             <button onClick={()=>{ navigate("/question-bank"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
                               Question Banks

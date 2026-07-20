@@ -83,12 +83,20 @@ function Navbar() {
                     </button>
 
                     {showUserPopup && (
-                        <div className='absolute right-0 mt-3 w-48 bg-white shadow-xl border border-gray-200 rounded-xl p-4 z-50'>
-                            <p className='text-md text-blue-500 font-medium mb-1'>{userData?.name}</p>
+                        <div className='absolute right-0 mt-3 w-56 bg-white shadow-xl border border-gray-200 rounded-xl p-4 z-50'>
+                            <p className='text-md text-blue-500 font-medium mb-2'>{userData?.name}</p>
 
-                            <button onClick={()=>navigate("/history")} className='w-full text-left text-sm py-2 hover:text-black text-gray-600'>InterView History</button>
+                            <button onClick={()=>{ navigate("/question-bank"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
+                              Question Banks
+                              <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">50+ Roles</span>
+                            </button>
+                            <button onClick={()=>{ navigate("/schedule"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
+                              Schedule Interview
+                              <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>
+                            </button>
+                            <button onClick={()=>{ navigate("/history"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600'>Interview History</button>
                             <button onClick={handleLogout} 
-                            className='w-full text-left text-sm py-2 flex items-center gap-2 text-red-500'>
+                            className='w-full text-left text-sm py-2 flex items-center gap-2 text-red-500 mt-1 border-t border-gray-100 pt-2'>
                                 <HiOutlineLogout size={16}/>
                                 Logout</button>
                         </div>

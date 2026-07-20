@@ -10,6 +10,8 @@ import InterviewPage from './pages/InterviewPage'
 import InterviewHistory from './pages/InterviewHistory'
 import Pricing from './pages/Pricing'
 import InterviewReport from './pages/InterviewReport'
+import ScheduleInterview from './pages/ScheduleInterview'
+import QuestionBank from './pages/QuestionBank'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -37,9 +39,8 @@ function App() {
       <Route path='/history' element={<InterviewHistory/>}/>
       <Route path='/pricing' element={<Pricing/>}/>
       <Route path='/report/:id' element={<InterviewReport/>}/>
-
-
-
+      <Route path='/schedule' element={<ScheduleInterview/>}/>
+      <Route path='/question-bank' element={<QuestionBank/>}/>
     </Routes>
   )
 }

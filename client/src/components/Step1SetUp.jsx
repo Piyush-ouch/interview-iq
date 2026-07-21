@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { motion } from "motion/react"
 import {
     FaUserTie,
@@ -12,19 +12,32 @@ import axios from "axios"
 import { ServerUrl } from '../App';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
+import { useLocation } from 'react-router-dom';
+
 function Step1SetUp({ onStart }) {
-    const {userData}= useSelector((state)=>state.user)
-    const dispatch = useDispatch()
-    const [role, setRole] = useState("");
-    const [experience, setExperience] = useState("");
-    const [mode, setMode] = useState("Technical");
+    const location = useLocation();
+    const { userData } = useSelector((state) => state.user);
+    const dispatch = useDispatch();
+
+    const [role, setRole] = useState(location.state?.role || "");
+    const [experience, setExperience] = useState(location.state?.experience || "");
+    const [mode, setMode] = useState(location.state?.mode || "Technical");
     const [resumeFile, setResumeFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [projects, setProjects] = useState([]);
     const [skills, setSkills] = useState([]);
-    const [resumeText, setResumeText] = useState("");
+    const [resumeText, setResumeText] = useState(location.state?.resumeText || "");
     const [analysisDone, setAnalysisDone] = useState(false);
     const [analyzing, setAnalyzing] = useState(false);
+
+    useEffect(() => {
+        if (location.state) {
+            if (location.state.role) setRole(location.state.role);
+            if (location.state.experience) setExperience(location.state.experience);
+            if (location.state.mode) setMode(location.state.mode);
+            if (location.state.resumeText) setResumeText(location.state.resumeText);
+        }
+    }, [location.state]);
 
 
     const handleUploadResume = async () => {
@@ -63,7 +76,7 @@ function Step1SetUp({ onStart }) {
             dispatch(setUserData({...userData , credits:result.data.creditsLeft}))
            }
            setLoading(false)
-           onStart(result.data)
+           onStart({ ...result.data, battleId: location.state?.battleId })
 
         } catch (error) {
             console.log(error)

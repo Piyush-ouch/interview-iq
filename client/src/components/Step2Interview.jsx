@@ -344,6 +344,21 @@ function Step2Interview({ interviewData, onFinish }) {
     try {
       const result = await axios.post(ServerUrl+ "/api/interview/finish" , { interviewId} , {withCredentials:true})
 
+      if (interviewData?.battleId) {
+        try {
+          await axios.post(
+            ServerUrl + "/api/battle/complete-interview",
+            {
+              battleId: interviewData.battleId,
+              interviewId: interviewId,
+            },
+            { withCredentials: true }
+          );
+        } catch (battleErr) {
+          console.error("Failed to update battle interview result:", battleErr);
+        }
+      }
+
       console.log(result.data)
       onFinish(result.data)
     } catch (error) {

@@ -14,6 +14,7 @@ import ScheduleInterview from './pages/ScheduleInterview'
 import QuestionBank from './pages/QuestionBank'
 import Analytics from './pages/Analytics'
 import ResumeOptimizer from './pages/ResumeOptimizer'
+import InterviewBattle from './pages/InterviewBattle'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -45,6 +46,7 @@ function App() {
       <Route path='/question-bank' element={<QuestionBank/>}/>
       <Route path='/analytics' element={<Analytics/>}/>
       <Route path='/resume-optimizer' element={<ResumeOptimizer/>}/>
+      <Route path='/battle' element={<InterviewBattle/>}/>
     </Routes>
   )
 }

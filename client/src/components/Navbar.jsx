@@ -98,6 +98,10 @@ function Navbar() {
                               Question Banks
                               <span className="bg-emerald-100 text-emerald-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">50+ Roles</span>
                             </button>
+                            <button onClick={()=>{ navigate("/battle"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
+                              1v1 Peer Battle
+                              <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">HOT ⚔️</span>
+                            </button>
                             <button onClick={()=>{ navigate("/schedule"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
                               Schedule Interview
                               <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>

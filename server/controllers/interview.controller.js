@@ -455,6 +455,100 @@ export const getInterviewReport = async (req,res) => {
   }
 }
 
+export const generateFollowUp = async (req, res) => {
+  try {
+    const { interviewId, questionIndex } = req.body;
+
+    if (!interviewId || questionIndex === undefined) {
+      return res.status(400).json({ message: "interviewId and questionIndex are required." });
+    }
+
+    const interview = await Interview.findById(interviewId);
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found." });
+    }
+
+    // Verify ownership
+    if (interview.userId.toString() !== req.userId) {
+      return res.status(403).json({ message: "Unauthorized access to this interview." });
+    }
+
+    const targetQuestion = interview.questions[questionIndex];
+    if (!targetQuestion) {
+      return res.status(400).json({ message: "Invalid question index." });
+    }
+
+    // Don't generate follow-up if answer is empty or already a follow-up
+    if (!targetQuestion.answer || !targetQuestion.answer.trim() || targetQuestion.isFollowUp) {
+      return res.json({ skip: true, message: "No follow-up required." });
+    }
+
+    const messages = [
+      {
+        role: "system",
+        content: `
+You are a real human interviewer conducting a live professional interview.
+
+The candidate just answered a question. Generate ONE natural, adaptive follow-up question that directly probes deeper into a specific technical term, concept, project detail, or claim made in their answer.
+
+Strict Rules:
+- Generate exactly 1 follow-up question.
+- Must be a single sentence between 12 and 22 words.
+- Do NOT repeat the candidate's answer back to them in full.
+- Ask directly and conversationally (e.g., "You mentioned X, how would you handle scenario Y?").
+- Do NOT include quotes, numbering, or introductory chatter.
+`
+      },
+      {
+        role: "user",
+        content: `
+Role: ${interview.role}
+Original Question: ${targetQuestion.question}
+Candidate's Answer: ${targetQuestion.answer}
+`
+      }
+    ];
+
+    const aiResponse = await askAi(messages);
+
+    if (!aiResponse || !aiResponse.trim()) {
+      return res.json({ skip: true, message: "AI returned empty follow-up." });
+    }
+
+    const followUpQuestionText = aiResponse.trim().replace(/^["']|["']$/g, '');
+
+    const newFollowUpObj = {
+      question: followUpQuestionText,
+      difficulty: targetQuestion.difficulty || "medium",
+      timeLimit: 60,
+      isFollowUp: true,
+      parentQuestionIndex: questionIndex,
+    };
+
+    interview.questions.push(newFollowUpObj);
+    await interview.save();
+
+    const newQuestionIndex = interview.questions.length - 1;
+
+    return res.status(200).json({
+      skip: false,
+      followUp: {
+        question: followUpQuestionText,
+        difficulty: newFollowUpObj.difficulty,
+        timeLimit: newFollowUpObj.timeLimit,
+        index: newQuestionIndex,
+        isFollowUp: true,
+      }
+    });
+
+  } catch (error) {
+    console.error("Error generating follow-up question:", error);
+    // Graceful degradation: allow candidate to proceed without blocking
+    return res.status(200).json({ skip: true, message: error.message });
+  }
+};
+
+
 
 
 

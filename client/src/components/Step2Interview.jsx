@@ -30,10 +30,16 @@ function Step2Interview({ interviewData, onFinish }) {
   const [voiceGender, setVoiceGender] = useState("female");
   const [subtitle, setSubtitle] = useState("");
 
+  // Adaptive Follow-Up States
+  const [followUpObj, setFollowUpObj] = useState(null);
+  const [isInFollowUp, setIsInFollowUp] = useState(false);
+  const [isLoadingFollowUp, setIsLoadingFollowUp] = useState(false);
 
   const videoRef = useRef(null);
 
-  const currentQuestion = questions[currentIndex];
+  const currentQuestion = isInFollowUp && followUpObj
+    ? followUpObj
+    : questions[currentIndex];
 
 
   useEffect(() => {
@@ -119,7 +125,6 @@ function Step2Interview({ interviewData, onFinish }) {
         setIsAIPlaying(false);
 
 
-
         if (isMicOn) {
           startMic();
         }
@@ -152,7 +157,7 @@ function Step2Interview({ interviewData, onFinish }) {
         );
 
         setIsIntroPhase(false)
-      } else if (currentQuestion) {
+      } else if (currentQuestion && !isInFollowUp) {
         await new Promise(r => setTimeout(r, 800));
 
         // If last question (hard level)
@@ -193,13 +198,13 @@ function Step2Interview({ interviewData, onFinish }) {
 
     return () => clearInterval(timer)
 
-  }, [isIntroPhase, currentIndex])
+  }, [isIntroPhase, currentIndex, isInFollowUp])
 
   useEffect(() => {
-  if (!isIntroPhase && currentQuestion) {
-    setTimeLeft(currentQuestion.timeLimit || 60);
-  }
-}, [currentIndex]);
+    if (!isIntroPhase && currentQuestion) {
+      setTimeLeft(currentQuestion.timeLimit || 60);
+    }
+  }, [currentIndex, isInFollowUp]);
 
 
   useEffect(() => {
@@ -245,15 +250,40 @@ function Step2Interview({ interviewData, onFinish }) {
   };
 
 
+  const fetchFollowUpInBackground = async (originalQIndex) => {
+    setIsLoadingFollowUp(true);
+    try {
+      const res = await axios.post(
+        ServerUrl + "/api/interview/generate-followup",
+        {
+          interviewId,
+          questionIndex: originalQIndex,
+        },
+        { withCredentials: true }
+      );
+      if (res.data && !res.data.skip && res.data.followUp) {
+        setFollowUpObj(res.data.followUp);
+      }
+    } catch (err) {
+      console.error("Follow-up generation error:", err);
+    } finally {
+      setIsLoadingFollowUp(false);
+    }
+  };
+
   const submitAnswer = async () => {
     if (isSubmitting) return;
     stopMic()
     setIsSubmitting(true)
 
+    const targetIndex = isInFollowUp && followUpObj
+      ? followUpObj.index
+      : currentIndex;
+
     try {
       const result = await axios.post(ServerUrl + "/api/interview/submit-answer", {
         interviewId,
-        questionIndex: currentIndex,
+        questionIndex: targetIndex,
         answer,
         timeTaken:
           currentQuestion.timeLimit - timeLeft,
@@ -262,15 +292,38 @@ function Step2Interview({ interviewData, onFinish }) {
       setFeedback(result.data.feedback)
       speakText(result.data.feedback)
       setIsSubmitting(false)
+
+      // Trigger follow-up generation in background if answering an original question with non-empty answer
+      if (!isInFollowUp && answer && answer.trim()) {
+        fetchFollowUpInBackground(currentIndex);
+      }
     } catch (error) {
-console.log(error)
-setIsSubmitting(false)
+      console.log(error)
+      setIsSubmitting(false)
     }
   }
 
-  const handleNext =async () => {
+  const handleNext = async () => {
     setAnswer("");
     setFeedback("");
+
+    // If we have a follow-up ready and we are not currently in follow-up mode
+    if (!isInFollowUp && followUpObj) {
+      setIsInFollowUp(true);
+      setTimeLeft(followUpObj.timeLimit || 60);
+
+      await speakText("Let me ask a quick follow-up on that.");
+      await speakText(followUpObj.question);
+
+      if (isMicOn) {
+        startMic();
+      }
+      return;
+    }
+
+    // Reset follow-up state for next main question
+    setIsInFollowUp(false);
+    setFollowUpObj(null);
 
     if (currentIndex + 1 >= questions.length) {
       finishInterview();
@@ -283,8 +336,6 @@ setIsSubmitting(false)
     setTimeout(() => {
       if (isMicOn) startMic();
     }, 500);
-
-   
   }
 
   const finishInterview = async () => {
@@ -375,13 +426,17 @@ setIsSubmitting(false)
 
             <div className='grid grid-cols-2 gap-6 text-center'>
               <div>
-                <span className='text-2xl font-bold text-emerald-600'>{currentIndex + 1}</span>
-                <span className='text-xs text-gray-400'>Current Questions</span>
+                <span className='text-2xl font-bold text-emerald-600'>
+                  {isInFollowUp ? `${currentIndex + 1}.1` : currentIndex + 1}
+                </span>
+                <span className='text-xs text-gray-400 block'>
+                  {isInFollowUp ? "Follow-Up Question" : "Current Question"}
+                </span>
               </div>
 
               <div>
                 <span className='text-2xl font-bold text-emerald-600'>{questions.length}</span>
-                <span className='text-xs text-gray-400'>Total Questions</span>
+                <span className='text-xs text-gray-400 block'>Main Questions</span>
               </div>
             </div>
 
@@ -392,19 +447,42 @@ setIsSubmitting(false)
         {/* Text section */}
 
         <div className='flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative'>
-          <h2 className='text-xl sm:text-2xl font-bold text-emerald-600 mb-6'>
-            AI Smart Interview
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className='text-xl sm:text-2xl font-bold text-emerald-600'>
+              AI Smart Interview
+            </h2>
+            {isInFollowUp && (
+              <span className="bg-purple-100 text-purple-700 border border-purple-200 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
+                🔄 Adaptive Follow-Up
+              </span>
+            )}
+          </div>
 
 
-          {!isIntroPhase && (<div className='relative mb-6 bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-sm'>
-            <p className='text-xs sm:text-sm text-gray-400 mb-2'>
-              Question {currentIndex + 1} of {questions.length}
-            </p>
+          {!isIntroPhase && (
+            <div className={`relative mb-6 p-4 sm:p-6 rounded-2xl border shadow-sm transition-all ${
+              isInFollowUp
+                ? "bg-purple-50/60 border-purple-200"
+                : "bg-gray-50 border-gray-200"
+            }`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className='text-xs sm:text-sm text-gray-500 font-medium'>
+                  {isInFollowUp
+                    ? `Follow-Up for Question ${currentIndex + 1}`
+                    : `Question ${currentIndex + 1} of ${questions.length}`}
+                </p>
+                {isInFollowUp && (
+                  <span className="text-[11px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded-md">
+                    Probing Deeper
+                  </span>
+                )}
+              </div>
 
-            <div className='text-base sm:text-lg font-semibold text-gray-800 leading-relaxed '>{currentQuestion?.question}</div>
-          </div>)
-          }
+              <div className='text-base sm:text-lg font-semibold text-gray-800 leading-relaxed '>
+                {currentQuestion?.question}
+              </div>
+            </div>
+          )}
           <textarea
             placeholder="Type your answer here..."
             onChange={(e) => setAnswer(e.target.value)}
@@ -425,7 +503,7 @@ setIsSubmitting(false)
             disabled={isSubmitting}
               whileTap={{ scale: 0.95 }}
               className='flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500'>
-              {isSubmitting?"Submitting...":"Submit Answer"}
+              {isSubmitting ? "Submitting..." : "Submit Answer"}
 
             </motion.button>
 
@@ -439,8 +517,11 @@ setIsSubmitting(false)
               <button
               onClick={handleNext}
 
-               className='w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1'>
-                Next Question <BsArrowRight size={18}/>
+               className='w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1 cursor-pointer font-semibold'>
+                {isInFollowUp || !followUpObj
+                  ? "Next Question"
+                  : "Continue to Follow-Up Question"}{" "}
+                <BsArrowRight size={18}/>
               </button>
 
             </motion.div>

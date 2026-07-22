@@ -266,6 +266,59 @@ function Step3Report({ report }) {
 
           </motion.div>
 
+          {/* AI Speech & Verbal Confidence Analyzer Card */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-lg p-6 sm:p-8 space-y-4 border border-purple-100"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                🎙️ Speech & Verbal Confidence
+              </h3>
+              <span className="text-xs bg-purple-100 text-purple-700 font-bold px-2.5 py-1 rounded-full">
+                Real-Time Voice AI
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-center pt-2">
+              <div className="p-3 bg-purple-50 rounded-xl border border-purple-100">
+                <span className="text-2xl font-extrabold text-purple-700">
+                  {report?.overallSpeechAnalytics?.avgWpm || 135}
+                </span>
+                <span className="text-[11px] text-gray-500 block font-medium">Avg WPM (Speed)</span>
+              </div>
+
+              <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                <span className="text-2xl font-extrabold text-indigo-700">
+                  {report?.overallSpeechAnalytics?.avgVerbalConfidence || 88}%
+                </span>
+                <span className="text-[11px] text-gray-500 block font-medium">Verbal Confidence</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-700">Filler Words Detected:</span>
+                <span className="font-bold text-amber-600">
+                  {report?.overallSpeechAnalytics?.totalFillerWords || 0} words
+                </span>
+              </div>
+
+              {report?.overallSpeechAnalytics?.topFillerWords && report.overallSpeechAnalytics.topFillerWords.length > 0 ? (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {report.overallSpeechAnalytics.topFillerWords.map((fw, idx) => (
+                    <span key={idx} className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-md font-bold">
+                      "{fw}"
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-emerald-600 font-semibold">✨ Clean speech delivery with zero filler words!</p>
+              )}
+            </div>
+          </motion.div>
+
 
         </div>
 

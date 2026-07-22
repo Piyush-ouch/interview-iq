@@ -12,6 +12,14 @@ const questionsSchema = new mongoose.Schema({
   correctness: { type: Number, default: 0 },
   isFollowUp: { type: Boolean, default: false },
   parentQuestionIndex: Number,
+  speechAnalysis: {
+    wpm: { type: Number, default: 0 },
+    fillerWordsCount: { type: Number, default: 0 },
+    fillerWordsList: [String],
+    pauseCount: { type: Number, default: 0 },
+    verbalConfidenceScore: { type: Number, default: 0 },
+    speechFeedback: [String],
+  },
 })
 
 

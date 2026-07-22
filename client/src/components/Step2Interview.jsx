@@ -9,7 +9,7 @@ import { useRef } from 'react'
 import { useEffect } from 'react'
 import axios from "axios"
 import { ServerUrl } from '../App'
-import { BsArrowRight } from 'react-icons/bs'
+import { analyzeSpeechPerformance } from '../utils/speechAnalyzer';
 
 function Step2Interview({ interviewData, onFinish }) {
   const { interviewId, questions, userName } = interviewData;
@@ -280,13 +280,22 @@ function Step2Interview({ interviewData, onFinish }) {
       ? followUpObj.index
       : currentIndex;
 
+    const timeTaken = currentQuestion.timeLimit - timeLeft;
+
+    // Calculate real-time speech and verbal confidence attributes
+    const speechAnalysis = analyzeSpeechPerformance(
+      answer,
+      timeTaken,
+      0
+    );
+
     try {
       const result = await axios.post(ServerUrl + "/api/interview/submit-answer", {
         interviewId,
         questionIndex: targetIndex,
         answer,
-        timeTaken:
-          currentQuestion.timeLimit - timeLeft,
+        timeTaken,
+        speechAnalysis,
       } , {withCredentials:true})
 
       setFeedback(result.data.feedback)

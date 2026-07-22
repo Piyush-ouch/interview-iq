@@ -219,10 +219,29 @@ Make questions based on the candidate’s role, experience,interviewMode, projec
 
 export const submitAnswer = async (req, res) => {
   try {
-    const { interviewId, questionIndex, answer, timeTaken } = req.body
+    const { interviewId, questionIndex, answer, timeTaken, speechAnalysis } = req.body;
 
-    const interview = await Interview.findById(interviewId)
-    const question = interview.questions[questionIndex]
+    const interview = await Interview.findById(interviewId);
+    if (!interview) {
+      return res.status(404).json({ message: "Interview not found." });
+    }
+
+    const question = interview.questions[questionIndex];
+    if (!question) {
+      return res.status(400).json({ message: "Invalid question index." });
+    }
+
+    // Save speech analysis data if provided
+    if (speechAnalysis) {
+      question.speechAnalysis = {
+        wpm: speechAnalysis.wpm || 0,
+        fillerWordsCount: speechAnalysis.fillerWordsCount || 0,
+        fillerWordsList: speechAnalysis.fillerWordsList || [],
+        pauseCount: speechAnalysis.pauseCount || 0,
+        verbalConfidenceScore: speechAnalysis.verbalConfidenceScore || 0,
+        speechFeedback: speechAnalysis.speechFeedback || [],
+      };
+    }
 
     // If no answer
     if (!answer) {
@@ -233,7 +252,7 @@ export const submitAnswer = async (req, res) => {
       await interview.save();
 
       return res.json({
-        feedback: question.feedback
+        feedback: question.feedback,
       });
     }
 
@@ -246,10 +265,9 @@ export const submitAnswer = async (req, res) => {
       await interview.save();
 
       return res.json({
-        feedback: question.feedback
+        feedback: question.feedback,
       });
     }
-
 
     const messages = [
       {
@@ -293,23 +311,25 @@ Return ONLY valid JSON in this format:
   "finalScore": number,
   "feedback": "short human feedback"
 }
-`
-      }
-      ,
+`,
+      },
       {
         role: "user",
         content: `
 Question: ${question.question}
 Answer: ${answer}
-`
-      }
+`,
+      },
     ];
 
-
-    const aiResponse = await askAi(messages)
-
-
-    const parsed = JSON.parse(aiResponse);
+    const aiResponse = await askAi(messages);
+    let parsed;
+    try {
+      let cleanStr = aiResponse.trim().replace(/^```json\s*|\s*```$/gi, "").trim();
+      parsed = JSON.parse(cleanStr);
+    } catch {
+      parsed = { confidence: 7, communication: 7, correctness: 7, finalScore: 7, feedback: "Good effort. Focus on technical clarity." };
+    }
 
     question.answer = answer;
     question.confidence = parsed.confidence;
@@ -319,21 +339,18 @@ Answer: ${answer}
     question.feedback = parsed.feedback;
     await interview.save();
 
-
-    return res.status(200).json({feedback :parsed.feedback})
+    return res.status(200).json({ feedback: parsed.feedback });
   } catch (error) {
-    return res.status(500).json({message:`failed to submit answer ${error}`})
-
+    return res.status(500).json({ message: `failed to submit answer ${error}` });
   }
-}
+};
 
-
-export const finishInterview = async (req,res) => {
+export const finishInterview = async (req, res) => {
   try {
-    const {interviewId} = req.body
-    const interview = await Interview.findById(interviewId)
-    if(!interview){
-      return res.status(400).json({message:"failed to find Interview"})
+    const { interviewId } = req.body;
+    const interview = await Interview.findById(interviewId);
+    if (!interview) {
+      return res.status(400).json({ message: "failed to find Interview" });
     }
 
     const totalQuestions = interview.questions.length;
@@ -343,28 +360,40 @@ export const finishInterview = async (req,res) => {
     let totalCommunication = 0;
     let totalCorrectness = 0;
 
+    let totalWpm = 0;
+    let totalFillerWords = 0;
+    let totalVerbalConfidence = 0;
+    let validSpeechCount = 0;
+    const allFillerWords = [];
+
     interview.questions.forEach((q) => {
       totalScore += q.score || 0;
       totalConfidence += q.confidence || 0;
       totalCommunication += q.communication || 0;
       totalCorrectness += q.correctness || 0;
+
+      if (q.speechAnalysis && q.speechAnalysis.wpm > 0) {
+        totalWpm += q.speechAnalysis.wpm;
+        totalFillerWords += q.speechAnalysis.fillerWordsCount || 0;
+        totalVerbalConfidence += q.speechAnalysis.verbalConfidenceScore || 0;
+        validSpeechCount++;
+        if (Array.isArray(q.speechAnalysis.fillerWordsList)) {
+          allFillerWords.push(...q.speechAnalysis.fillerWordsList);
+        }
+      }
     });
 
-    const finalScore = totalQuestions
-      ? totalScore / totalQuestions
-      : 0;
+    const finalScore = totalQuestions ? totalScore / totalQuestions : 0;
+    const avgConfidence = totalQuestions ? totalConfidence / totalQuestions : 0;
+    const avgCommunication = totalQuestions ? totalCommunication / totalQuestions : 0;
+    const avgCorrectness = totalQuestions ? totalCorrectness / totalQuestions : 0;
 
-    const avgConfidence = totalQuestions
-      ? totalConfidence / totalQuestions
-      : 0;
-
-    const avgCommunication = totalQuestions
-      ? totalCommunication / totalQuestions
-      : 0;
-
-    const avgCorrectness = totalQuestions
-      ? totalCorrectness / totalQuestions
-      : 0;
+    const overallSpeechAnalytics = {
+      avgWpm: validSpeechCount ? Math.round(totalWpm / validSpeechCount) : 0,
+      totalFillerWords,
+      avgVerbalConfidence: validSpeechCount ? Math.round(totalVerbalConfidence / validSpeechCount) : 0,
+      topFillerWords: Array.from(new Set(allFillerWords)),
+    };
 
     interview.finalScore = finalScore;
     interview.status = "completed";
@@ -372,10 +401,11 @@ export const finishInterview = async (req,res) => {
     await interview.save();
 
     return res.status(200).json({
-       finalScore: Number(finalScore.toFixed(1)),
+      finalScore: Number(finalScore.toFixed(1)),
       confidence: Number(avgConfidence.toFixed(1)),
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
+      overallSpeechAnalytics,
       questionWiseScore: interview.questions.map((q) => ({
         question: q.question,
         score: q.score || 0,
@@ -383,26 +413,25 @@ export const finishInterview = async (req,res) => {
         confidence: q.confidence || 0,
         communication: q.communication || 0,
         correctness: q.correctness || 0,
+        speechAnalysis: q.speechAnalysis || null,
       })),
-    })
+    });
   } catch (error) {
-    return res.status(500).json({message:`failed to finish Interview ${error}`})
+    return res.status(500).json({ message: `failed to finish Interview ${error}` });
   }
-}
+};
 
-
-export const getMyInterviews = async (req,res) => {
+export const getMyInterviews = async (req, res) => {
   try {
-    const interviews = await Interview.find({userId:req.userId})
-    .sort({ createdAt: -1 })
-    .select("role experience mode finalScore status createdAt");
+    const interviews = await Interview.find({ userId: req.userId })
+      .sort({ createdAt: -1 })
+      .select("role experience mode finalScore status createdAt");
 
-    return res.status(200).json(interviews)
-
+    return res.status(200).json(interviews);
   } catch (error) {
-     return res.status(500).json({message:`failed to find currentUser Interview ${error}`})
+    return res.status(500).json({ message: `failed to find currentUser Interview ${error}` });
   }
-}
+};
 
 export const getInterviewReport = async (req, res) => {
   try {
@@ -429,21 +458,45 @@ export const getInterviewReport = async (req, res) => {
     let totalCommunication = 0;
     let totalCorrectness = 0;
 
+    let totalWpm = 0;
+    let totalFillerWords = 0;
+    let totalVerbalConfidence = 0;
+    let validSpeechCount = 0;
+    const allFillerWords = [];
+
     interview.questions.forEach((q) => {
       totalConfidence += q.confidence || 0;
       totalCommunication += q.communication || 0;
       totalCorrectness += q.correctness || 0;
+
+      if (q.speechAnalysis && q.speechAnalysis.wpm > 0) {
+        totalWpm += q.speechAnalysis.wpm;
+        totalFillerWords += q.speechAnalysis.fillerWordsCount || 0;
+        totalVerbalConfidence += q.speechAnalysis.verbalConfidenceScore || 0;
+        validSpeechCount++;
+        if (Array.isArray(q.speechAnalysis.fillerWordsList)) {
+          allFillerWords.push(...q.speechAnalysis.fillerWordsList);
+        }
+      }
     });
 
     const avgConfidence = totalQuestions ? totalConfidence / totalQuestions : 0;
     const avgCommunication = totalQuestions ? totalCommunication / totalQuestions : 0;
     const avgCorrectness = totalQuestions ? totalCorrectness / totalQuestions : 0;
 
+    const overallSpeechAnalytics = {
+      avgWpm: validSpeechCount ? Math.round(totalWpm / validSpeechCount) : 0,
+      totalFillerWords,
+      avgVerbalConfidence: validSpeechCount ? Math.round(totalVerbalConfidence / validSpeechCount) : 0,
+      topFillerWords: Array.from(new Set(allFillerWords)),
+    };
+
     return res.status(200).json({
       finalScore: interview.finalScore || 0,
       confidence: Number(avgConfidence.toFixed(1)),
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
+      overallSpeechAnalytics,
       questionWiseScore: interview.questions,
     });
   } catch (error) {

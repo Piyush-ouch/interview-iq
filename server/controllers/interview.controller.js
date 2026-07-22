@@ -410,14 +410,24 @@ export const getMyInterviews = async (req,res) => {
   }
 }
 
-export const getInterviewReport = async (req,res) => {
+export const getInterviewReport = async (req, res) => {
   try {
-    const interview = await Interview.findById(req.params.id)
+    const { id } = req.params;
 
-    if (!interview) {
-      return res.status(404).json({ message: "Interview not found" });
+    if (!id || id.length !== 24) {
+      return res.status(400).json({ message: "Invalid interview ID format." });
     }
 
+    const interview = await Interview.findById(id);
+
+    if (!interview) {
+      return res.status(404).json({ message: "Interview report not found." });
+    }
+
+    // Ownership Verification (Prevents IDOR Vulnerability)
+    if (interview.userId.toString() !== req.userId) {
+      return res.status(403).json({ message: "Unauthorized: You do not have permission to view this report." });
+    }
 
     const totalQuestions = interview.questions.length;
 
@@ -430,30 +440,23 @@ export const getInterviewReport = async (req,res) => {
       totalCommunication += q.communication || 0;
       totalCorrectness += q.correctness || 0;
     });
-    const avgConfidence = totalQuestions
-      ? totalConfidence / totalQuestions
-      : 0;
 
-    const avgCommunication = totalQuestions
-      ? totalCommunication / totalQuestions
-      : 0;
+    const avgConfidence = totalQuestions ? totalConfidence / totalQuestions : 0;
+    const avgCommunication = totalQuestions ? totalCommunication / totalQuestions : 0;
+    const avgCorrectness = totalQuestions ? totalCorrectness / totalQuestions : 0;
 
-    const avgCorrectness = totalQuestions
-      ? totalCorrectness / totalQuestions
-      : 0;
-
-       return res.json({
-      finalScore: interview.finalScore,
+    return res.status(200).json({
+      finalScore: interview.finalScore || 0,
       confidence: Number(avgConfidence.toFixed(1)),
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
-      questionWiseScore: interview.questions
+      questionWiseScore: interview.questions,
     });
-
   } catch (error) {
-    return res.status(500).json({message:`failed to find currentUser Interview report ${error}`})
+    console.error("Error fetching interview report:", error);
+    return res.status(500).json({ message: `Failed to fetch interview report: ${error.message}` });
   }
-}
+};
 
 export const generateFollowUp = async (req, res) => {
   try {

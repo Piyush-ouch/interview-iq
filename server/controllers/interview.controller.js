@@ -83,39 +83,36 @@ Return strictly JSON:
 
 
 export const generateQuestion = async (req, res) => {
+  let creditDeducted = false;
+
   try {
-    let { role, experience, mode, resumeText, projects, skills } = req.body
+    let { role, experience, mode, resumeText, projects, skills } = req.body;
 
     role = role?.trim();
     experience = experience?.trim();
     mode = mode?.trim();
 
     if (!role || !experience || !mode) {
-      return res.status(400).json({ message: "Role, Experience and Mode are required." })
+      return res.status(400).json({ message: "Role, Experience and Mode are required." });
     }
 
-    const user = await User.findById(req.userId)
+    // Atomic Credit Reservation (Prevents Concurrent Request Race Conditions)
+    const user = await User.findOneAndUpdate(
+      { _id: req.userId, credits: { $gte: 50 } },
+      { $inc: { credits: -50 } },
+      { new: true }
+    );
 
     if (!user) {
-      return res.status(404).json({
-        message: "User not found."
-      });
-    }
-
-    if (user.credits < 50) {
       return res.status(400).json({
-        message: "Not enough credits. Minimum 50 required."
+        message: "Not enough credits. Minimum 50 credits required.",
       });
     }
 
-    const projectText = Array.isArray(projects) && projects.length
-      ? projects.join(", ")
-      : "None";
+    creditDeducted = true;
 
-    const skillsText = Array.isArray(skills) && skills.length
-      ? skills.join(", ")
-      : "None";
-
+    const projectText = Array.isArray(projects) && projects.length ? projects.join(", ") : "None";
+    const skillsText = Array.isArray(skills) && skills.length ? skills.join(", ") : "None";
     const safeResume = resumeText?.trim() || "None";
 
     const userPrompt = `
@@ -128,13 +125,12 @@ export const generateQuestion = async (req, res) => {
     `;
 
     if (!userPrompt.trim()) {
-      return res.status(400).json({
-        message: "Prompt content is empty."
-      });
+      // Refund credits if prompt invalid
+      await User.findByIdAndUpdate(req.userId, { $inc: { credits: 50 } });
+      return res.status(400).json({ message: "Prompt content is empty." });
     }
 
     const messages = [
-
       {
         role: "system",
         content: `
@@ -162,41 +158,33 @@ Question 4 → medium
 Question 5 → hard  
 
 Make questions based on the candidate’s role, experience,interviewMode, projects, skills, and resume details.
-`
-      }
-      ,
+`,
+      },
       {
         role: "user",
-        content: userPrompt
-      }
+        content: userPrompt,
+      },
     ];
 
-
-    const aiResponse = await askAi(messages)
+    const aiResponse = await askAi(messages);
 
     if (!aiResponse || !aiResponse.trim()) {
-           
-      return res.status(500).json({
-        message: "AI returned empty response."
-      });
-
+      // Refund credits if AI returns empty response
+      await User.findByIdAndUpdate(req.userId, { $inc: { credits: 50 } });
+      return res.status(500).json({ message: "AI returned empty response." });
     }
 
     const questionsArray = aiResponse
       .split("\n")
-      .map(q => q.trim())
-      .filter(q => q.length > 0)
+      .map((q) => q.trim())
+      .filter((q) => q.length > 0)
       .slice(0, 5);
 
     if (questionsArray.length === 0) {
-      
-      return res.status(500).json({
-        message: "AI failed to generate questions."
-      });
+      // Refund credits if question array generation fails
+      await User.findByIdAndUpdate(req.userId, { $inc: { credits: 50 } });
+      return res.status(500).json({ message: "AI failed to generate questions." });
     }
-
-    user.credits -= 50;
-    await user.save();
 
     const interview = await Interview.create({
       userId: user._id,
@@ -208,19 +196,25 @@ Make questions based on the candidate’s role, experience,interviewMode, projec
         question: q,
         difficulty: ["easy", "easy", "medium", "medium", "hard"][index],
         timeLimit: [60, 60, 90, 90, 120][index],
-      }))
-    })
+      })),
+    });
 
-    res.json({
+    return res.json({
       interviewId: interview._id,
       creditsLeft: user.credits,
       userName: user.name,
-      questions: interview.questions
+      questions: interview.questions,
     });
   } catch (error) {
-    return res.status(500).json({message:`failed to create interview ${error}`})
+    // Atomic refund in case of unhandled error
+    if (creditDeducted) {
+      await User.findByIdAndUpdate(req.userId, { $inc: { credits: 50 } }).catch((err) =>
+        console.error("Credit refund error:", err)
+      );
+    }
+    return res.status(500).json({ message: `Failed to create interview: ${error.message}` });
   }
-}
+};
 
 
 export const submitAnswer = async (req, res) => {

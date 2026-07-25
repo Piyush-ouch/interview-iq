@@ -14,6 +14,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setUserData } from '../redux/userSlice';
 import { useLocation } from 'react-router-dom';
 
+import { SUPPORTED_LANGUAGES } from '../utils/languages';
+
 function Step1SetUp({ onStart }) {
     const location = useLocation();
     const { userData } = useSelector((state) => state.user);
@@ -22,6 +24,7 @@ function Step1SetUp({ onStart }) {
     const [role, setRole] = useState(location.state?.role || "");
     const [experience, setExperience] = useState(location.state?.experience || "");
     const [mode, setMode] = useState(location.state?.mode || "Technical");
+    const [language, setLanguage] = useState(location.state?.language || "English");
     const [resumeFile, setResumeFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [projects, setProjects] = useState([]);
@@ -35,6 +38,7 @@ function Step1SetUp({ onStart }) {
             if (location.state.role) setRole(location.state.role);
             if (location.state.experience) setExperience(location.state.experience);
             if (location.state.mode) setMode(location.state.mode);
+            if (location.state.language) setLanguage(location.state.language);
             if (location.state.resumeText) setResumeText(location.state.resumeText);
         }
     }, [location.state]);
@@ -70,13 +74,13 @@ function Step1SetUp({ onStart }) {
     const handleStart = async () => {
         setLoading(true)
         try {
-           const result = await axios.post(ServerUrl + "/api/interview/generate-questions" , {role, experience, mode , resumeText, projects, skills } , {withCredentials:true}) 
+           const result = await axios.post(ServerUrl + "/api/interview/generate-questions" , {role, experience, mode , language, resumeText, projects, skills } , {withCredentials:true}) 
            console.log(result.data)
            if(userData){
             dispatch(setUserData({...userData , credits:result.data.creditsLeft}))
            }
            setLoading(false)
-           onStart({ ...result.data, battleId: location.state?.battleId })
+           onStart({ ...result.data, language, battleId: location.state?.battleId })
 
         } catch (error) {
             console.log(error)
@@ -177,14 +181,26 @@ function Step1SetUp({ onStart }) {
 
                         </div>
 
-                        <select value={mode}
-                            onChange={(e) => setMode(e.target.value)}
-                            className='w-full py-3 px-4 border border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <select value={mode}
+                                onChange={(e) => setMode(e.target.value)}
+                                className='w-full py-3 px-4 border border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'>
 
-                            <option value="Technical">Technical Interview</option>
-                            <option value="HR">HR Interview</option>
+                                <option value="Technical">Technical Interview</option>
+                                <option value="HR">HR Interview</option>
 
-                        </select>
+                            </select>
+
+                            <select value={language}
+                                onChange={(e) => setLanguage(e.target.value)}
+                                className='w-full py-3 px-4 border border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition font-medium'>
+                                {SUPPORTED_LANGUAGES.map((lang) => (
+                                    <option key={lang.code} value={lang.name}>
+                                        {lang.flag} {lang.name} ({lang.nativeName})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
                         {!analysisDone && (
                             <motion.div

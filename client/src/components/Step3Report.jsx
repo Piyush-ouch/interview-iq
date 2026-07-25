@@ -10,9 +10,11 @@ import autoTable from "jspdf-autotable"
 import axios from 'axios';
 import { ServerUrl } from '../App';
 import CertificateCard from './CertificateCard';
+import { getLanguageObj } from "../utils/languages";
 
 function Step3Report({ report }) {
   const [issuedCert, setIssuedCert] = useState(null);
+  const langObj = getLanguageObj(report?.language || "English");
 
   useEffect(() => {
     async function autoIssueCert() {
@@ -216,7 +218,12 @@ function Step3Report({ report }) {
           </div>
         </div>
 
-        <button onClick={downloadPDF} className='bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-md transition-all duration-300 font-semibold text-sm sm:text-base text-nowrap cursor-pointer'>Download PDF</button>
+        <div className="flex items-center gap-3">
+          <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm px-4 py-3 rounded-xl font-bold shadow-xs flex items-center gap-2">
+            <span>{langObj.flag}</span> {langObj.name} Session
+          </span>
+          <button onClick={downloadPDF} className='bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-md transition-all duration-300 font-semibold text-sm sm:text-base text-nowrap cursor-pointer'>Download PDF</button>
+        </div>
       </div>
 
 

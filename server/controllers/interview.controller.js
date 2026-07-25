@@ -86,11 +86,12 @@ export const generateQuestion = async (req, res) => {
   let creditDeducted = false;
 
   try {
-    let { role, experience, mode, resumeText, projects, skills } = req.body;
+    let { role, experience, mode, resumeText, projects, skills, language = "English" } = req.body;
 
     role = role?.trim();
     experience = experience?.trim();
     mode = mode?.trim();
+    language = language?.trim() || "English";
 
     if (!role || !experience || !mode) {
       return res.status(400).json({ message: "Role, Experience and Mode are required." });
@@ -122,6 +123,7 @@ export const generateQuestion = async (req, res) => {
     Projects:${projectText}
     Skills:${skillsText},
     Resume:${safeResume}
+    InterviewLanguage:${language}
     `;
 
     if (!userPrompt.trim()) {
@@ -136,7 +138,8 @@ export const generateQuestion = async (req, res) => {
         content: `
 You are a real human interviewer conducting a professional interview.
 
-Speak in simple, natural English as if you are directly talking to the candidate.
+Speak in simple, natural language as if you are directly talking to the candidate.
+${language !== "English" ? `IMPORTANT: Generate ALL interview questions directly in ${language}. Ensure correct technical vocabulary and natural grammar in ${language}.` : "Speak in natural English."}
 
 Generate exactly 5 interview questions.
 
@@ -157,7 +160,7 @@ Question 3 → medium
 Question 4 → medium  
 Question 5 → hard  
 
-Make questions based on the candidate’s role, experience,interviewMode, projects, skills, and resume details.
+Make questions based on the candidate’s role, experience, interviewMode, projects, skills, and resume details.
 `,
       },
       {
@@ -191,6 +194,7 @@ Make questions based on the candidate’s role, experience,interviewMode, projec
       role,
       experience,
       mode,
+      language,
       resumeText: safeResume,
       questions: questionsArray.map((q, index) => ({
         question: q,
@@ -203,6 +207,7 @@ Make questions based on the candidate’s role, experience,interviewMode, projec
       interviewId: interview._id,
       creditsLeft: user.credits,
       userName: user.name,
+      language: interview.language,
       questions: interview.questions,
     });
   } catch (error) {
@@ -652,6 +657,32 @@ Candidate's Answer: ${targetQuestion.answer}
     console.error("Error generating follow-up question:", error);
     // Graceful degradation: allow candidate to proceed without blocking
     return res.status(200).json({ skip: true, message: error.message });
+  }
+};
+
+export const translateText = async (req, res) => {
+  try {
+    const { text, targetLanguage = "English" } = req.body;
+    if (!text || !text.trim() || targetLanguage === "English") {
+      return res.json({ translatedText: text });
+    }
+
+    const messages = [
+      {
+        role: "system",
+        content: `You are an expert real-time language translator. Translate the given text accurately into ${targetLanguage}. Return ONLY the direct translation text without quotes, formatting, or extra explanations.`,
+      },
+      {
+        role: "user",
+        content: text,
+      },
+    ];
+
+    const translatedText = await askAi(messages);
+    return res.json({ translatedText: (translatedText || text).trim() });
+  } catch (error) {
+    console.error("Translation error:", error);
+    return res.status(500).json({ message: "Translation failed", error: error.message });
   }
 };
 

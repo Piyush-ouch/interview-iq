@@ -11,10 +11,12 @@ import { analyzeSpeechPerformance } from "../utils/speechAnalyzer";
 import { BodyLanguageAnalyzer } from "../utils/bodyLanguageAnalyzer";
 import { AudioToneAnalyzer } from "../utils/audioToneAnalyzer";
 import { useInterviewWebSocket } from "../hooks/useInterviewWebSocket";
-import LiveFeedbackDashboard from "./LiveFeedbackDashboard";
+import { getLanguageObj } from "../utils/languages";
 
 function Step2Interview({ interviewData, onFinish }) {
-  const { interviewId, questions, userName } = interviewData;
+  const { interviewId, questions, userName, language = "English" } = interviewData;
+  const langObj = getLanguageObj(language);
+
   const [isIntroPhase, setIsIntroPhase] = useState(true);
 
   const [isMicOn, setIsMicOn] = useState(true);
@@ -30,6 +32,11 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voiceGender, setVoiceGender] = useState("female");
   const [subtitle, setSubtitle] = useState("");
+
+  // Multi-Language Live Translation state
+  const [translatedQuestion, setTranslatedQuestion] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
 
   // Adaptive Follow-Up States
   const [followUpObj, setFollowUpObj] = useState(null);
@@ -314,6 +321,8 @@ function Step2Interview({ interviewData, onFinish }) {
   useEffect(() => {
     if (!isIntroPhase && currentQuestion) {
       setTimeLeft(currentQuestion.timeLimit || 60);
+      setShowTranslation(false);
+      setTranslatedQuestion("");
     }
   }, [currentIndex, isInFollowUp]);
 
@@ -321,7 +330,7 @@ function Step2Interview({ interviewData, onFinish }) {
     if (!("webkitSpeechRecognition" in window)) return;
 
     const recognition = new window.webkitSpeechRecognition();
-    recognition.lang = "en-US";
+    recognition.lang = langObj.locale || "en-US";
     recognition.continuous = true;
     recognition.interimResults = false;
 
@@ -332,7 +341,31 @@ function Step2Interview({ interviewData, onFinish }) {
     };
 
     recognitionRef.current = recognition;
-  }, []);
+  }, [langObj.locale]);
+
+  const handleToggleTranslation = async () => {
+    if (!showTranslation && !translatedQuestion && currentQuestion?.question) {
+      setIsTranslating(true);
+      try {
+        const targetLang = langObj.code === "en" ? "Spanish" : "English";
+        const res = await axios.post(
+          `${ServerUrl}/api/interview/translate`,
+          {
+            text: currentQuestion.question,
+            targetLanguage: targetLang,
+          },
+          { withCredentials: true }
+        );
+        setTranslatedQuestion(res.data.translatedText || currentQuestion.question);
+      } catch (err) {
+        console.error("Translation error:", err);
+        setTranslatedQuestion(currentQuestion.question);
+      } finally {
+        setIsTranslating(false);
+      }
+    }
+    setShowTranslation((prev) => !prev);
+  };
 
   const startMic = () => {
     if (recognitionRef.current && !isAIPlaying) {
@@ -635,15 +668,21 @@ function Step2Interview({ interviewData, onFinish }) {
 
         {/* Answer & Real-Time Performance Section */}
         <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               AI Smart Interview
             </h2>
-            {isInFollowUp && (
-              <span className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
-                🔄 Adaptive Follow-Up
+            <div className="flex items-center gap-2">
+              <span className="bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs px-3 py-1 rounded-full font-bold shadow-2xs flex items-center gap-1.5">
+                <span>{langObj.flag}</span> {langObj.name} ({langObj.locale})
               </span>
-            )}
+
+              {isInFollowUp && (
+                <span className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
+                  🔄 Adaptive Follow-Up
+                </span>
+              )}
+            </div>
           </div>
 
           {!isIntroPhase && (
@@ -660,15 +699,25 @@ function Step2Interview({ interviewData, onFinish }) {
                     ? `Follow-Up for Question ${currentIndex + 1}`
                     : `Question ${currentIndex + 1} of ${questions.length}`}
                 </p>
-                {isInFollowUp && (
-                  <span className="text-[11px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded-md">
-                    Probing Deeper
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleToggleTranslation}
+                    disabled={isTranslating}
+                    className="text-[11px] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 font-bold px-2.5 py-1 rounded-md transition shadow-2xs cursor-pointer flex items-center gap-1"
+                  >
+                    <span>🌐</span> {isTranslating ? "Translating..." : showTranslation ? "Show Original" : `Translate to ${langObj.code === "en" ? "Spanish" : "English"}`}
+                  </button>
+
+                  {isInFollowUp && (
+                    <span className="text-[11px] bg-purple-600 text-white font-bold px-2 py-0.5 rounded-md">
+                      Probing Deeper
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-relaxed">
-                {currentQuestion?.question}
+                {showTranslation && translatedQuestion ? translatedQuestion : currentQuestion?.question}
               </div>
             </div>
           )}

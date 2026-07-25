@@ -55,6 +55,11 @@ const interviewSchema = new mongoose.Schema({
     },
     questions:[questionsSchema],
 
+    language: {
+      type: String,
+      default: "English",
+    },
+
     finalScore: { type: Number, default: 0 },
 
     status: {

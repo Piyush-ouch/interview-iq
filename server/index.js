@@ -35,11 +35,18 @@ app.use("/api/analytics", analyticsRouter)
 app.use("/api/resume-optimizer", resumeOptimizerRouter)
 app.use("/api/battle", battleRouter)
 
+import http from "http"
+import { initWebSocketServer } from "./services/socket.service.js"
+
+const server = http.createServer(app)
+
 const PORT = process.env.PORT || 6000
-app.listen(PORT , async ()=>{
+server.listen(PORT , async ()=>{
     console.log(`Server running on port ${PORT}`)
+    initWebSocketServer(server)
     await connectDb()
     initReminderScheduler()
     await seedQuestionBankIfEmpty()
 })
+
 

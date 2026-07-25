@@ -5,7 +5,6 @@ import axios from "axios";
 import { ServerUrl } from "../App";
 import Navbar from "../components/Navbar";
 import {
-  FaSwords,
   FaTrophy,
   FaUsers,
   FaUserFriends,

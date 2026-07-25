@@ -20,6 +20,14 @@ const questionsSchema = new mongoose.Schema({
     verbalConfidenceScore: { type: Number, default: 0 },
     speechFeedback: [String],
   },
+  bodyLanguageAnalysis: {
+    eyeContactScore: { type: Number, default: 0 },
+    eyeContactStatus: { type: String, default: "Direct" },
+    postureScore: { type: Number, default: 0 },
+    postureStatus: { type: String, default: "Upright" },
+    gestureCount: { type: Number, default: 0 },
+    bodyConfidenceScore: { type: Number, default: 0 },
+  },
 })
 
 

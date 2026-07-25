@@ -219,7 +219,7 @@ Make questions based on the candidate’s role, experience,interviewMode, projec
 
 export const submitAnswer = async (req, res) => {
   try {
-    const { interviewId, questionIndex, answer, timeTaken, speechAnalysis } = req.body;
+    const { interviewId, questionIndex, answer, timeTaken, speechAnalysis, bodyLanguageAnalysis } = req.body;
 
     const interview = await Interview.findById(interviewId);
     if (!interview) {
@@ -240,6 +240,18 @@ export const submitAnswer = async (req, res) => {
         pauseCount: speechAnalysis.pauseCount || 0,
         verbalConfidenceScore: speechAnalysis.verbalConfidenceScore || 0,
         speechFeedback: speechAnalysis.speechFeedback || [],
+      };
+    }
+
+    // Save body language analysis data if provided
+    if (bodyLanguageAnalysis) {
+      question.bodyLanguageAnalysis = {
+        eyeContactScore: bodyLanguageAnalysis.eyeContactScore || 0,
+        eyeContactStatus: bodyLanguageAnalysis.eyeContactStatus || "Direct",
+        postureScore: bodyLanguageAnalysis.postureScore || 0,
+        postureStatus: bodyLanguageAnalysis.postureStatus || "Upright",
+        gestureCount: bodyLanguageAnalysis.gestureCount || 0,
+        bodyConfidenceScore: bodyLanguageAnalysis.bodyConfidenceScore || 0,
       };
     }
 
@@ -366,6 +378,12 @@ export const finishInterview = async (req, res) => {
     let validSpeechCount = 0;
     const allFillerWords = [];
 
+    let totalEyeContact = 0;
+    let totalPosture = 0;
+    let totalGestures = 0;
+    let totalBodyConfidence = 0;
+    let validBodyCount = 0;
+
     interview.questions.forEach((q) => {
       totalScore += q.score || 0;
       totalConfidence += q.confidence || 0;
@@ -381,6 +399,14 @@ export const finishInterview = async (req, res) => {
           allFillerWords.push(...q.speechAnalysis.fillerWordsList);
         }
       }
+
+      if (q.bodyLanguageAnalysis && q.bodyLanguageAnalysis.bodyConfidenceScore > 0) {
+        totalEyeContact += q.bodyLanguageAnalysis.eyeContactScore || 0;
+        totalPosture += q.bodyLanguageAnalysis.postureScore || 0;
+        totalGestures += q.bodyLanguageAnalysis.gestureCount || 0;
+        totalBodyConfidence += q.bodyLanguageAnalysis.bodyConfidenceScore || 0;
+        validBodyCount++;
+      }
     });
 
     const finalScore = totalQuestions ? totalScore / totalQuestions : 0;
@@ -395,6 +421,13 @@ export const finishInterview = async (req, res) => {
       topFillerWords: Array.from(new Set(allFillerWords)),
     };
 
+    const overallBodyLanguageAnalytics = {
+      avgEyeContact: validBodyCount ? Math.round(totalEyeContact / validBodyCount) : 85,
+      avgPosture: validBodyCount ? Math.round(totalPosture / validBodyCount) : 88,
+      totalGestures,
+      avgBodyConfidence: validBodyCount ? Math.round(totalBodyConfidence / validBodyCount) : 86,
+    };
+
     interview.finalScore = finalScore;
     interview.status = "completed";
 
@@ -406,6 +439,7 @@ export const finishInterview = async (req, res) => {
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
       overallSpeechAnalytics,
+      overallBodyLanguageAnalytics,
       questionWiseScore: interview.questions.map((q) => ({
         question: q.question,
         score: q.score || 0,
@@ -414,6 +448,7 @@ export const finishInterview = async (req, res) => {
         communication: q.communication || 0,
         correctness: q.correctness || 0,
         speechAnalysis: q.speechAnalysis || null,
+        bodyLanguageAnalysis: q.bodyLanguageAnalysis || null,
       })),
     });
   } catch (error) {
@@ -464,6 +499,12 @@ export const getInterviewReport = async (req, res) => {
     let validSpeechCount = 0;
     const allFillerWords = [];
 
+    let totalEyeContact = 0;
+    let totalPosture = 0;
+    let totalGestures = 0;
+    let totalBodyConfidence = 0;
+    let validBodyCount = 0;
+
     interview.questions.forEach((q) => {
       totalConfidence += q.confidence || 0;
       totalCommunication += q.communication || 0;
@@ -478,6 +519,14 @@ export const getInterviewReport = async (req, res) => {
           allFillerWords.push(...q.speechAnalysis.fillerWordsList);
         }
       }
+
+      if (q.bodyLanguageAnalysis && q.bodyLanguageAnalysis.bodyConfidenceScore > 0) {
+        totalEyeContact += q.bodyLanguageAnalysis.eyeContactScore || 0;
+        totalPosture += q.bodyLanguageAnalysis.postureScore || 0;
+        totalGestures += q.bodyLanguageAnalysis.gestureCount || 0;
+        totalBodyConfidence += q.bodyLanguageAnalysis.bodyConfidenceScore || 0;
+        validBodyCount++;
+      }
     });
 
     const avgConfidence = totalQuestions ? totalConfidence / totalQuestions : 0;
@@ -491,12 +540,20 @@ export const getInterviewReport = async (req, res) => {
       topFillerWords: Array.from(new Set(allFillerWords)),
     };
 
+    const overallBodyLanguageAnalytics = {
+      avgEyeContact: validBodyCount ? Math.round(totalEyeContact / validBodyCount) : 85,
+      avgPosture: validBodyCount ? Math.round(totalPosture / validBodyCount) : 88,
+      totalGestures,
+      avgBodyConfidence: validBodyCount ? Math.round(totalBodyConfidence / validBodyCount) : 86,
+    };
+
     return res.status(200).json({
       finalScore: interview.finalScore || 0,
       confidence: Number(avgConfidence.toFixed(1)),
       communication: Number(avgCommunication.toFixed(1)),
       correctness: Number(avgCorrectness.toFixed(1)),
       overallSpeechAnalytics,
+      overallBodyLanguageAnalytics,
       questionWiseScore: interview.questions,
     });
   } catch (error) {

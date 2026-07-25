@@ -1,30 +1,31 @@
-import React from 'react'
-import maleVideo from "../assets/videos/male-ai.mp4"
-import femaleVideo from "../assets/videos/female-ai.mp4"
-import Timer from './Timer'
-import { motion } from "motion/react"
-import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
-import { useState } from 'react'
-import { useRef } from 'react'
-import { useEffect } from 'react'
-import axios from "axios"
-import { ServerUrl } from '../App'
-import { analyzeSpeechPerformance } from '../utils/speechAnalyzer';
+import React, { useState, useRef, useEffect } from "react";
+import maleVideo from "../assets/videos/male-ai.mp4";
+import femaleVideo from "../assets/videos/female-ai.mp4";
+import Timer from "./Timer";
+import { motion } from "motion/react";
+import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash } from "react-icons/fa";
+import { BsArrowRight } from "react-icons/bs";
+import axios from "axios";
+import { ServerUrl } from "../App";
+import { analyzeSpeechPerformance } from "../utils/speechAnalyzer";
+import { BodyLanguageAnalyzer } from "../utils/bodyLanguageAnalyzer";
+import { AudioToneAnalyzer } from "../utils/audioToneAnalyzer";
+import { useInterviewWebSocket } from "../hooks/useInterviewWebSocket";
+import LiveFeedbackDashboard from "./LiveFeedbackDashboard";
 
 function Step2Interview({ interviewData, onFinish }) {
   const { interviewId, questions, userName } = interviewData;
   const [isIntroPhase, setIsIntroPhase] = useState(true);
 
   const [isMicOn, setIsMicOn] = useState(true);
+  const [isWebcamOn, setIsWebcamOn] = useState(true);
   const recognitionRef = useRef(null);
   const [isAIPlaying, setIsAIPlaying] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [timeLeft, setTimeLeft] = useState(
-    questions[0]?.timeLimit || 60
-  );
+  const [timeLeft, setTimeLeft] = useState(questions[0]?.timeLimit || 60);
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voiceGender, setVoiceGender] = useState("female");
@@ -35,25 +36,162 @@ function Step2Interview({ interviewData, onFinish }) {
   const [isInFollowUp, setIsInFollowUp] = useState(false);
   const [isLoadingFollowUp, setIsLoadingFollowUp] = useState(false);
 
+  // WebSockets & Real-Time Performance Telemetry
+  const { isConnected: isWsConnected, streamedMetrics, streamMetricsFrame } =
+    useInterviewWebSocket(interviewId);
+
+  // Real-time body language & audio metrics states
+  const [bodyMetrics, setBodyMetrics] = useState({
+    eyeContactScore: 88,
+    eyeContactStatus: "Direct",
+    postureScore: 92,
+    postureStatus: "Upright",
+    gestureCount: 0,
+    bodyConfidenceScore: 90,
+  });
+
+  const [audioMetrics, setAudioMetrics] = useState({
+    volume: 0,
+    pitchVariance: 0,
+    toneQuality: "Steady Tone",
+    frequencyData: [],
+  });
+
   const videoRef = useRef(null);
+  const userWebcamRef = useRef(null);
+  const bodyAnalyzerRef = useRef(null);
+  const audioAnalyzerRef = useRef(null);
+  const mediaStreamRef = useRef(null);
 
-  const currentQuestion = isInFollowUp && followUpObj
-    ? followUpObj
-    : questions[currentIndex];
+  const currentQuestion =
+    isInFollowUp && followUpObj ? followUpObj : questions[currentIndex];
 
+  // 1. Initialize WebCam & Audio Streams for Body & Tone Analysis
+  useEffect(() => {
+    let isMounted = true;
+    bodyAnalyzerRef.current = new BodyLanguageAnalyzer();
+    audioAnalyzerRef.current = new AudioToneAnalyzer();
 
+    async function initUserMedia() {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 320, height: 240 },
+            audio: true,
+          });
+
+          if (!isMounted) return;
+          mediaStreamRef.current = stream;
+
+          if (userWebcamRef.current) {
+            userWebcamRef.current.srcObject = stream;
+          }
+
+          // Start Audio Tone Analyzer
+          await audioAnalyzerRef.current.start(stream);
+        }
+      } catch (err) {
+        console.warn("Camera/Microphone media stream error:", err.message);
+      }
+    }
+
+    initUserMedia();
+
+    return () => {
+      isMounted = false;
+      if (audioAnalyzerRef.current) {
+        audioAnalyzerRef.current.stop();
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  // 2. Real-Time Telemetry Processing & WebSocket Streaming Loop
+  useEffect(() => {
+    let animFrameId;
+
+    const runTelemetryLoop = () => {
+      const timeTaken = currentQuestion?.timeLimit
+        ? currentQuestion.timeLimit - timeLeft
+        : 10;
+      const speechPerf = analyzeSpeechPerformance(answer, Math.max(1, timeTaken), 0);
+
+      // Body Language Detection
+      let bodyRes = {
+        eyeContactScore: 88,
+        eyeContactStatus: "Direct",
+        postureScore: 92,
+        postureStatus: "Upright",
+        gestureCount: 0,
+        bodyConfidenceScore: 90,
+      };
+
+      if (userWebcamRef.current && isWebcamOn && bodyAnalyzerRef.current) {
+        bodyRes = bodyAnalyzerRef.current.analyzeFrame(userWebcamRef.current);
+      }
+
+      // Audio Tone Detection
+      let audioRes = {
+        volume: 0,
+        pitchVariance: 0,
+        toneQuality: "Steady Tone",
+        frequencyData: [],
+      };
+
+      if (audioAnalyzerRef.current) {
+        audioRes = audioAnalyzerRef.current.getAudioMetrics();
+      }
+
+      setBodyMetrics(bodyRes);
+      setAudioMetrics(audioRes);
+
+      const compositeConfidence = Math.round(
+        speechPerf.verbalConfidenceScore * 0.5 +
+          bodyRes.postureScore * 0.25 +
+          bodyRes.eyeContactScore * 0.25
+      );
+
+      const framePayload = {
+        wpm: speechPerf.wpm,
+        fillerWordsCount: speechPerf.fillerWordsCount,
+        fillerWordsList: speechPerf.fillerWordsList,
+        verbalConfidenceScore: speechPerf.verbalConfidenceScore,
+        eyeContactScore: bodyRes.eyeContactScore,
+        eyeContactStatus: bodyRes.eyeContactStatus,
+        postureScore: bodyRes.postureScore,
+        postureStatus: bodyRes.postureStatus,
+        handGestureCount: bodyRes.gestureCount,
+        audioToneVolume: audioRes.volume,
+        pitchVariance: audioRes.pitchVariance,
+        overallConfidence: compositeConfidence,
+      };
+
+      streamMetricsFrame(framePayload);
+
+      animFrameId = requestAnimationFrame(runTelemetryLoop);
+    };
+
+    animFrameId = requestAnimationFrame(runTelemetryLoop);
+
+    return () => {
+      cancelAnimationFrame(animFrameId);
+    };
+  }, [answer, timeLeft, isWebcamOn, currentQuestion, streamMetricsFrame]);
+
+  // Voice Selection logic
   useEffect(() => {
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
       if (!voices.length) return;
 
-      // Try known female voices first
-      const femaleVoice =
-        voices.find(v =>
+      const femaleVoice = voices.find(
+        (v) =>
           v.name.toLowerCase().includes("zira") ||
           v.name.toLowerCase().includes("samantha") ||
           v.name.toLowerCase().includes("female")
-        );
+      );
 
       if (femaleVoice) {
         setSelectedVoice(femaleVoice);
@@ -61,13 +199,12 @@ function Step2Interview({ interviewData, onFinish }) {
         return;
       }
 
-      // Try known male voices
-      const maleVoice =
-        voices.find(v =>
+      const maleVoice = voices.find(
+        (v) =>
           v.name.toLowerCase().includes("david") ||
           v.name.toLowerCase().includes("mark") ||
           v.name.toLowerCase().includes("male")
-        );
+      );
 
       if (maleVoice) {
         setSelectedVoice(maleVoice);
@@ -75,18 +212,15 @@ function Step2Interview({ interviewData, onFinish }) {
         return;
       }
 
-      // Fallback: first voice (assume female)
       setSelectedVoice(voices[0]);
       setVoiceGender("female");
     };
 
     loadVoices();
     window.speechSynthesis.onvoiceschanged = loadVoices;
-
-  }, [])
+  }, []);
 
   const videoSource = voiceGender === "male" ? maleVideo : femaleVideo;
-
 
   /* ---------------- SPEAK FUNCTION ---------------- */
   const speakText = (text) => {
@@ -98,32 +232,23 @@ function Step2Interview({ interviewData, onFinish }) {
 
       window.speechSynthesis.cancel();
 
-      // Add natural pauses after commas and periods
-      const humanText = text
-        .replace(/,/g, ", ... ")
-        .replace(/\./g, ". ... ");
-
+      const humanText = text.replace(/,/g, ", ... ").replace(/\./g, ". ... ");
       const utterance = new SpeechSynthesisUtterance(humanText);
-
       utterance.voice = selectedVoice;
-
-      // Human-like pacing
-      utterance.rate = 0.92;     // slightly slower than normal
-      utterance.pitch = 1.05;    // small warmth
+      utterance.rate = 0.92;
+      utterance.pitch = 1.05;
       utterance.volume = 1;
 
       utterance.onstart = () => {
         setIsAIPlaying(true);
-        stopMic()
+        stopMic();
         videoRef.current?.play();
       };
 
-
       utterance.onend = () => {
         videoRef.current?.pause();
-        videoRef.current.currentTime = 0;
+        if (videoRef.current) videoRef.current.currentTime = 0;
         setIsAIPlaying(false);
-
 
         if (isMicOn) {
           startMic();
@@ -134,33 +259,26 @@ function Step2Interview({ interviewData, onFinish }) {
         }, 300);
       };
 
-
       setSubtitle(text);
-
       window.speechSynthesis.speak(utterance);
     });
   };
 
-
   useEffect(() => {
-    if (!selectedVoice) {
-      return;
-    }
+    if (!selectedVoice) return;
+
     const runIntro = async () => {
       if (isIntroPhase) {
         await speakText(
           `Hi ${userName}, it's great to meet you today. I hope you're feeling confident and ready.`
         );
-
         await speakText(
           "I'll ask you a few questions. Just answer naturally, and take your time. Let's begin."
         );
-
-        setIsIntroPhase(false)
+        setIsIntroPhase(false);
       } else if (currentQuestion && !isInFollowUp) {
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise((r) => setTimeout(r, 800));
 
-        // If last question (hard level)
         if (currentIndex === questions.length - 1) {
           await speakText("Alright, this one might be a bit more challenging.");
         }
@@ -171,41 +289,33 @@ function Step2Interview({ interviewData, onFinish }) {
           startMic();
         }
       }
+    };
 
-    }
-
-    runIntro()
-
-
-  }, [selectedVoice, isIntroPhase, currentIndex])
-
-
+    runIntro();
+  }, [selectedVoice, isIntroPhase, currentIndex]);
 
   useEffect(() => {
     if (isIntroPhase) return;
     if (!currentQuestion) return;
-    
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          clearInterval(timer)
+          clearInterval(timer);
           return 0;
         }
-        return prev - 1
-
-      })
+        return prev - 1;
+      });
     }, 1000);
 
-    return () => clearInterval(timer)
-
-  }, [isIntroPhase, currentIndex, isInFollowUp])
+    return () => clearInterval(timer);
+  }, [isIntroPhase, currentIndex, isInFollowUp]);
 
   useEffect(() => {
     if (!isIntroPhase && currentQuestion) {
       setTimeLeft(currentQuestion.timeLimit || 60);
     }
   }, [currentIndex, isInFollowUp]);
-
 
   useEffect(() => {
     if (!("webkitSpeechRecognition" in window)) return;
@@ -218,20 +328,17 @@ function Step2Interview({ interviewData, onFinish }) {
     recognition.onresult = (event) => {
       const transcript =
         event.results[event.results.length - 1][0].transcript;
-
       setAnswer((prev) => prev + " " + transcript);
     };
 
     recognitionRef.current = recognition;
-
   }, []);
-
 
   const startMic = () => {
     if (recognitionRef.current && !isAIPlaying) {
       try {
         recognitionRef.current.start();
-      } catch { }
+      } catch {}
     }
   };
 
@@ -240,6 +347,7 @@ function Step2Interview({ interviewData, onFinish }) {
       recognitionRef.current.stop();
     }
   };
+
   const toggleMic = () => {
     if (isMicOn) {
       stopMic();
@@ -249,6 +357,15 @@ function Step2Interview({ interviewData, onFinish }) {
     setIsMicOn(!isMicOn);
   };
 
+  const toggleWebcam = () => {
+    if (mediaStreamRef.current) {
+      const videoTrack = mediaStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !isWebcamOn;
+        setIsWebcamOn(!isWebcamOn);
+      }
+    }
+  };
 
   const fetchFollowUpInBackground = async (originalQIndex) => {
     setIsLoadingFollowUp(true);
@@ -273,50 +390,55 @@ function Step2Interview({ interviewData, onFinish }) {
 
   const submitAnswer = async () => {
     if (isSubmitting) return;
-    stopMic()
-    setIsSubmitting(true)
+    stopMic();
+    setIsSubmitting(true);
 
-    const targetIndex = isInFollowUp && followUpObj
-      ? followUpObj.index
-      : currentIndex;
-
+    const targetIndex =
+      isInFollowUp && followUpObj ? followUpObj.index : currentIndex;
     const timeTaken = currentQuestion.timeLimit - timeLeft;
 
-    // Calculate real-time speech and verbal confidence attributes
-    const speechAnalysis = analyzeSpeechPerformance(
-      answer,
-      timeTaken,
-      0
-    );
+    const speechAnalysis = analyzeSpeechPerformance(answer, timeTaken, 0);
+
+    const bodyLanguageAnalysis = {
+      eyeContactScore: bodyMetrics.eyeContactScore,
+      eyeContactStatus: bodyMetrics.eyeContactStatus,
+      postureScore: bodyMetrics.postureScore,
+      postureStatus: bodyMetrics.postureStatus,
+      gestureCount: bodyMetrics.gestureCount,
+      bodyConfidenceScore: bodyMetrics.bodyConfidenceScore,
+    };
 
     try {
-      const result = await axios.post(ServerUrl + "/api/interview/submit-answer", {
-        interviewId,
-        questionIndex: targetIndex,
-        answer,
-        timeTaken,
-        speechAnalysis,
-      } , {withCredentials:true})
+      const result = await axios.post(
+        ServerUrl + "/api/interview/submit-answer",
+        {
+          interviewId,
+          questionIndex: targetIndex,
+          answer,
+          timeTaken,
+          speechAnalysis,
+          bodyLanguageAnalysis,
+        },
+        { withCredentials: true }
+      );
 
-      setFeedback(result.data.feedback)
-      speakText(result.data.feedback)
-      setIsSubmitting(false)
+      setFeedback(result.data.feedback);
+      speakText(result.data.feedback);
+      setIsSubmitting(false);
 
-      // Trigger follow-up generation in background if answering an original question with non-empty answer
       if (!isInFollowUp && answer && answer.trim()) {
         fetchFollowUpInBackground(currentIndex);
       }
     } catch (error) {
-      console.log(error)
-      setIsSubmitting(false)
+      console.log(error);
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleNext = async () => {
     setAnswer("");
     setFeedback("");
 
-    // If we have a follow-up ready and we are not currently in follow-up mode
     if (!isInFollowUp && followUpObj) {
       setIsInFollowUp(true);
       setTimeLeft(followUpObj.timeLimit || 60);
@@ -324,13 +446,10 @@ function Step2Interview({ interviewData, onFinish }) {
       await speakText("Let me ask a quick follow-up on that.");
       await speakText(followUpObj.question);
 
-      if (isMicOn) {
-        startMic();
-      }
+      if (isMicOn) startMic();
       return;
     }
 
-    // Reset follow-up state for next main question
     setIsInFollowUp(false);
     setFollowUpObj(null);
 
@@ -340,18 +459,21 @@ function Step2Interview({ interviewData, onFinish }) {
     }
 
     await speakText("Alright, let's move to the next question.");
-
     setCurrentIndex(currentIndex + 1);
     setTimeout(() => {
       if (isMicOn) startMic();
     }, 500);
-  }
+  };
 
   const finishInterview = async () => {
-    stopMic()
-    setIsMicOn(false)
+    stopMic();
+    setIsMicOn(false);
     try {
-      const result = await axios.post(ServerUrl+ "/api/interview/finish" , { interviewId} , {withCredentials:true})
+      const result = await axios.post(
+        ServerUrl + "/api/interview/finish",
+        { interviewId },
+        { withCredentials: true }
+      );
 
       if (interviewData?.battleId) {
         try {
@@ -364,24 +486,22 @@ function Step2Interview({ interviewData, onFinish }) {
             { withCredentials: true }
           );
         } catch (battleErr) {
-          console.error("Failed to update battle interview result:", battleErr);
+          console.error("Failed to update battle result:", battleErr);
         }
       }
 
-      console.log(result.data)
-      onFinish(result.data)
+      onFinish(result.data);
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
-
-   useEffect(() => {
+  useEffect(() => {
     if (isIntroPhase) return;
     if (!currentQuestion) return;
 
     if (timeLeft === 0 && !isSubmitting && !feedback) {
-      submitAnswer()
+      submitAnswer();
     }
   }, [timeLeft]);
 
@@ -391,24 +511,36 @@ function Step2Interview({ interviewData, onFinish }) {
         recognitionRef.current.stop();
         recognitionRef.current.abort();
       }
-
       window.speechSynthesis.cancel();
     };
   }, []);
 
-
-
-
-
-
+  // Compute live combined metrics for dashboard
+  const activeMetrics = streamedMetrics || {
+    wpm: analyzeSpeechPerformance(answer, currentQuestion?.timeLimit - timeLeft || 10, 0).wpm,
+    fillerWordsCount: analyzeSpeechPerformance(answer, 1, 0).fillerWordsCount,
+    fillerWordsList: analyzeSpeechPerformance(answer, 1, 0).fillerWordsList,
+    verbalConfidenceScore: analyzeSpeechPerformance(answer, 1, 0).verbalConfidenceScore,
+    eyeContactScore: bodyMetrics.eyeContactScore,
+    eyeContactStatus: bodyMetrics.eyeContactStatus,
+    postureScore: bodyMetrics.postureScore,
+    postureStatus: bodyMetrics.postureStatus,
+    gestureCount: bodyMetrics.gestureCount,
+    bodyConfidenceScore: bodyMetrics.bodyConfidenceScore,
+    overallConfidence: Math.round(
+      analyzeSpeechPerformance(answer, 1, 0).verbalConfidenceScore * 0.5 +
+        bodyMetrics.postureScore * 0.25 +
+        bodyMetrics.eyeContactScore * 0.25
+    ),
+  };
 
   return (
-    <div className='min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex items-center justify-center p-4 sm:p-6'>
-      <div className='w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden'>
-
-        {/* video section */}
-        <div className='w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200'>
-          <div className='w-full max-w-md rounded-2xl overflow-hidden shadow-xl'>
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex flex-col items-center justify-center p-4 sm:p-6 space-y-6">
+      <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
+        {/* Video & Camera Stream Section */}
+        <div className="w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200">
+          {/* AI Interviewer Video */}
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl relative border border-gray-200">
             <video
               src={videoSource}
               key={videoSource}
@@ -418,61 +550,93 @@ function Step2Interview({ interviewData, onFinish }) {
               preload="auto"
               className="w-full h-auto object-cover"
             />
+            <span className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-full font-bold">
+              AI Interviewer
+            </span>
           </div>
 
-          {/* subtitle */}
+          {/* Candidate User WebCam Stream Feed */}
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-md relative bg-slate-900 aspect-video border border-gray-200">
+            <video
+              ref={userWebcamRef}
+              autoPlay
+              muted
+              playsInline
+              className={`w-full h-full object-cover ${!isWebcamOn && "hidden"}`}
+            />
+
+            {!isWebcamOn && (
+              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 space-y-2">
+                <FaVideoSlash size={28} />
+                <span className="text-xs font-semibold">Webcam paused</span>
+              </div>
+            )}
+
+            <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              Candidate Feed (Pose AI Active)
+            </div>
+
+            <button
+              onClick={toggleWebcam}
+              className="absolute bottom-2 right-2 bg-black/70 text-white p-2 rounded-xl hover:bg-black transition cursor-pointer"
+            >
+              {isWebcamOn ? <FaVideo size={14} /> : <FaVideoSlash size={14} />}
+            </button>
+          </div>
+
+          {/* Subtitle */}
           {subtitle && (
-            <div className='w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm'>
-              <p className='text-gray-700 text-sm sm:text-base font-medium text-center leading-relaxed'>{subtitle}</p>
+            <div className="w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
+              <p className="text-gray-700 text-sm sm:text-base font-medium text-center leading-relaxed">
+                {subtitle}
+              </p>
             </div>
           )}
 
-
-          {/* timer Area */}
-          <div className='w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-5'>
-            <div className='flex justify-between items-center'>
-              <span className='text-sm text-gray-500'>
-                Interview Status
-              </span>
-              {isAIPlaying && <span className='text-sm font-semibold text-emerald-600'>
-                {isAIPlaying ? "AI Speaking" : ""}
-              </span>}
+          {/* Timer Area */}
+          <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-5">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-500">Interview Status</span>
+              {isAIPlaying && (
+                <span className="text-sm font-semibold text-emerald-600">
+                  AI Speaking
+                </span>
+              )}
             </div>
 
-            <div className="h-px bg-gray-200"></div>
+            <div className="h-px bg-gray-200" />
 
-            <div className='flex justify-center'>
-
+            <div className="flex justify-center">
               <Timer timeLeft={timeLeft} totalTime={currentQuestion?.timeLimit} />
             </div>
 
-            <div className="h-px bg-gray-200"></div>
+            <div className="h-px bg-gray-200" />
 
-            <div className='grid grid-cols-2 gap-6 text-center'>
+            <div className="grid grid-cols-2 gap-6 text-center">
               <div>
-                <span className='text-2xl font-bold text-emerald-600'>
+                <span className="text-2xl font-bold text-emerald-600">
                   {isInFollowUp ? `${currentIndex + 1}.1` : currentIndex + 1}
                 </span>
-                <span className='text-xs text-gray-400 block'>
+                <span className="text-xs text-gray-400 block">
                   {isInFollowUp ? "Follow-Up Question" : "Current Question"}
                 </span>
               </div>
 
               <div>
-                <span className='text-2xl font-bold text-emerald-600'>{questions.length}</span>
-                <span className='text-xs text-gray-400 block'>Main Questions</span>
+                <span className="text-2xl font-bold text-emerald-600">
+                  {questions.length}
+                </span>
+                <span className="text-xs text-gray-400 block">Main Questions</span>
               </div>
             </div>
-
-
           </div>
         </div>
 
-        {/* Text section */}
-
-        <div className='flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative'>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className='text-xl sm:text-2xl font-bold text-emerald-600'>
+        {/* Answer & Real-Time Performance Section */}
+        <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-bold text-emerald-600">
               AI Smart Interview
             </h2>
             {isInFollowUp && (
@@ -482,15 +646,16 @@ function Step2Interview({ interviewData, onFinish }) {
             )}
           </div>
 
-
           {!isIntroPhase && (
-            <div className={`relative mb-6 p-4 sm:p-6 rounded-2xl border shadow-sm transition-all ${
-              isInFollowUp
-                ? "bg-purple-50/60 border-purple-200"
-                : "bg-gray-50 border-gray-200"
-            }`}>
+            <div
+              className={`relative p-4 sm:p-6 rounded-2xl border shadow-sm transition-all ${
+                isInFollowUp
+                  ? "bg-purple-50/60 border-purple-200"
+                  : "bg-gray-50 border-gray-200"
+              }`}
+            >
               <div className="flex items-center justify-between mb-2">
-                <p className='text-xs sm:text-sm text-gray-500 font-medium'>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium">
                   {isInFollowUp
                     ? `Follow-Up for Question ${currentIndex + 1}`
                     : `Question ${currentIndex + 1} of ${questions.length}`}
@@ -502,59 +667,69 @@ function Step2Interview({ interviewData, onFinish }) {
                 )}
               </div>
 
-              <div className='text-base sm:text-lg font-semibold text-gray-800 leading-relaxed '>
+              <div className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
                 {currentQuestion?.question}
               </div>
             </div>
           )}
+
           <textarea
-            placeholder="Type your answer here..."
+            placeholder="Type or speak your answer here..."
             onChange={(e) => setAnswer(e.target.value)}
             value={answer}
-            className="flex-1 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800" />
+            className="w-full h-36 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
+          />
 
+          {!feedback ? (
+            <div className="flex items-center gap-4">
+              <motion.button
+                onClick={toggleMic}
+                whileTap={{ scale: 0.9 }}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg cursor-pointer"
+              >
+                {isMicOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20} />}
+              </motion.button>
 
-         {!feedback ? ( <div className='flex items-center gap-4 mt-6'>
-            <motion.button
-              onClick={toggleMic}
-              whileTap={{ scale: 0.9 }}
-              className='w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-full bg-black text-white shadow-lg'>
-              {isMicOn ? <FaMicrophone size={20} /> : <FaMicrophoneSlash size={20}/>}
-            </motion.button>
-
-            <motion.button
-            onClick={submitAnswer}
-            disabled={isSubmitting}
-              whileTap={{ scale: 0.95 }}
-              className='flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500'>
-              {isSubmitting ? "Submitting..." : "Submit Answer"}
-
-            </motion.button>
-
-          </div>):(
-            <motion.div 
-             initial={{ opacity: 0 }}
+              <motion.button
+                onClick={submitAnswer}
+                disabled={isSubmitting}
+                whileTap={{ scale: 0.95 }}
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 sm:py-4 rounded-2xl shadow-lg hover:opacity-90 transition font-semibold disabled:bg-gray-500 cursor-pointer"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Answer"}
+              </motion.button>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-            className='mt-6 bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm'>
-              <p className='text-emerald-700 font-medium mb-4'>{feedback}</p>
-
+              className="bg-emerald-50 border border-emerald-200 p-5 rounded-2xl shadow-sm"
+            >
+              <p className="text-emerald-700 font-medium mb-4">{feedback}</p>
               <button
-              onClick={handleNext}
-
-               className='w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1 cursor-pointer font-semibold'>
+                onClick={handleNext}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition flex items-center justify-center gap-1 cursor-pointer font-semibold"
+              >
                 {isInFollowUp || !followUpObj
                   ? "Next Question"
                   : "Continue to Follow-Up Question"}{" "}
-                <BsArrowRight size={18}/>
+                <BsArrowRight size={18} />
               </button>
-
             </motion.div>
           )}
+
+          {/* Embedded Real-Time Performance & Body Language Telemetry Dashboard */}
+          <LiveFeedbackDashboard
+            metrics={activeMetrics}
+            audioMetrics={audioMetrics}
+            isWsConnected={isWsConnected}
+            showWebcam={isWebcamOn}
+            onToggleWebcam={toggleWebcam}
+          />
         </div>
       </div>
-
     </div>
-  )
+  );
 }
 
-export default Step2Interview
+export default Step2Interview;

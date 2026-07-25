@@ -319,6 +319,53 @@ function Step3Report({ report }) {
             </div>
           </motion.div>
 
+          {/* AI Body Language & Pose Detection Card */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-lg p-6 sm:p-8 space-y-4 border border-teal-100"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-bold text-gray-800 flex items-center gap-2">
+                🤖 AI Pose & Body Language
+              </h3>
+              <span className="text-xs bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-full">
+                WebSocket Live Telemetry
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-center pt-2">
+              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                <span className="text-2xl font-extrabold text-emerald-700">
+                  {report?.overallBodyLanguageAnalytics?.avgEyeContact || 88}%
+                </span>
+                <span className="text-[11px] text-gray-500 block font-medium">Eye Contact</span>
+              </div>
+
+              <div className="p-3 bg-teal-50 rounded-xl border border-teal-100">
+                <span className="text-2xl font-extrabold text-teal-700">
+                  {report?.overallBodyLanguageAnalytics?.avgPosture || 92}%
+                </span>
+                <span className="text-[11px] text-gray-500 block font-medium">Posture Score</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-700">Total Hand Gestures:</span>
+                <span className="font-bold text-purple-700">
+                  {report?.overallBodyLanguageAnalytics?.totalGestures || 0} gestures
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-gray-700">Overall Body Composure:</span>
+                <span className="font-bold text-emerald-600">
+                  {report?.overallBodyLanguageAnalytics?.avgBodyConfidence || 90}% High
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
 
         </div>
 

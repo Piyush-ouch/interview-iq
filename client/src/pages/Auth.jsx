@@ -32,7 +32,7 @@ function Auth({isModel = false}) {
   return (
     <div className={`
       w-full 
-      ${isModel ? "py-4" : "min-h-screen bg-[#f3f3f3] flex items-center justify-center px-6 py-20"}
+      ${isModel ? "py-4" : "min-h-screen bg-[#f3f3f3] dark:bg-[#0b0f19] transition-colors duration-300 flex items-center justify-center px-6 py-20"}
     `}>
         <motion.div 
         initial={{opacity:0 , y:-40}} 
@@ -41,26 +41,26 @@ function Auth({isModel = false}) {
         className={`
         w-full 
         ${isModel ? "max-w-md p-8 rounded-3xl" : "max-w-lg p-12 rounded-[32px]"}
-        bg-white shadow-2xl border border-gray-200
+        bg-white dark:bg-slate-900 shadow-2xl border border-gray-200 dark:border-slate-800 transition-colors duration-300
       `}>
             <div className='flex items-center justify-center gap-3 mb-6'>
-                <div className='bg-black text-white p-2 rounded-lg'>
+                <div className='bg-black dark:bg-emerald-600 text-white p-2 rounded-lg'>
                     <BsRobot size={18}/>
 
                 </div>
-                <h2 className='font-semibold text-lg'>InterviewIQ.AI</h2>
+                <h2 className='font-semibold text-lg text-gray-800 dark:text-white'>InterviewIQ.AI</h2>
             </div>
 
-            <h1 className='text-2xl md:text-3xl font-semibold text-center leading-snug mb-4'>
+            <h1 className='text-2xl md:text-3xl font-semibold text-center leading-snug mb-4 text-gray-800 dark:text-white'>
                 Continue with
-                <span className='bg-green-100 text-green-600 px-3 py-1 rounded-full inline-flex items-center gap-2'>
+                <span className='bg-green-100 dark:bg-emerald-950 text-green-600 dark:text-emerald-300 border border-transparent dark:border-emerald-800 px-3 py-1 rounded-full inline-flex items-center gap-2 ml-2'>
                     <IoSparkles size={16}/>
                     AI Smart Interview
 
                 </span>
             </h1>
 
-            <p className='text-gray-500 text-center text-sm md:text-base leading-relaxed mb-8'>
+            <p className='text-gray-500 dark:text-gray-300 text-center text-sm md:text-base leading-relaxed mb-8'>
                 Sign in to start AI-powered mock interviews,
         track your progress, and unlock detailed performance insights.
             </p>
@@ -70,7 +70,7 @@ function Auth({isModel = false}) {
             onClick={handleGoogleAuth}
             whileHover={{opacity:0.9 , scale:1.03}}
             whileTap={{opacity:1 , scale:0.98}}
-            className='w-full flex items-center justify-center gap-3 py-3 bg-black text-white rounded-full shadow-md '>
+            className='w-full flex items-center justify-center gap-3 py-3 bg-black dark:bg-emerald-600 hover:bg-gray-800 dark:hover:bg-emerald-700 text-white rounded-full shadow-md font-semibold cursor-pointer transition'>
                 <FcGoogle size={20}/>
                 Continue with Google
 

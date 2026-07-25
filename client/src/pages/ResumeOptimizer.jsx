@@ -101,7 +101,7 @@ function ResumeOptimizer() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-white transition-colors duration-300 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
@@ -110,17 +110,17 @@ function ResumeOptimizer() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
-              className="p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 transition shadow-xs cursor-pointer"
+              className="p-2.5 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer"
               title="Go Back"
             >
               <FaArrowLeft size={14} />
             </button>
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                <FaMagic className="text-purple-600" />
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                <FaMagic className="text-purple-600 dark:text-purple-400" />
                 AI Resume Optimizer & ATS Review
               </h1>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                 Score your resume, check ATS compliance, extract missing keywords, and get line-by-line bullet rewrites.
               </p>
             </div>
@@ -128,15 +128,15 @@ function ResumeOptimizer() {
         </div>
 
         {/* Form Input Section */}
-        <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-200 shadow-xs mb-8">
+        <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs mb-8 transition-colors">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* File Upload Zone */}
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+                <label className="block text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center gap-2">
                   <FaFilePdf className="text-red-500" /> Upload Resume (PDF)
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center hover:border-purple-500 transition bg-gray-50/50">
+                <div className="border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-2xl p-6 text-center hover:border-purple-500 transition bg-gray-50/50 dark:bg-slate-800/50">
                   <input
                     type="file"
                     accept="application/pdf"
@@ -146,7 +146,7 @@ function ResumeOptimizer() {
                   />
                   <label htmlFor="resume-pdf-input" className="cursor-pointer space-y-2 block">
                     <FaFileUpload className="mx-auto text-gray-400 text-3xl" />
-                    <p className="text-xs font-semibold text-gray-700">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                       {file ? file.name : "Click or drag & drop PDF resume here"}
                     </p>
                     <p className="text-[11px] text-gray-400">Maximum file size: 5MB</p>

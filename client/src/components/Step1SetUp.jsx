@@ -88,21 +88,21 @@ function Step1SetUp({ onStart }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
-            className='min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 px-4'>
+            className='min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-950 dark:to-slate-900 transition-colors duration-300 px-4 py-8'>
 
-            <div className='w-full max-w-6xl bg-white rounded-3xl shadow-2xl grid md:grid-cols-2 overflow-hidden'>
+            <div className='w-full max-w-6xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl grid md:grid-cols-2 overflow-hidden border border-gray-200 dark:border-slate-800 transition-colors duration-300'>
 
                 <motion.div
                     initial={{ x: -80, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ duration: 0.7 }}
-                    className='relative bg-gradient-to-br from-green-50 to-green-100 p-12 flex flex-col justify-center'>
+                    className='relative bg-gradient-to-br from-green-50 to-green-100 dark:from-emerald-950/40 dark:to-slate-900 p-8 sm:p-12 flex flex-col justify-center transition-colors duration-300'>
 
-                    <h2 className="text-4xl font-bold text-gray-800 mb-6">
+                    <h2 className="text-4xl font-bold text-gray-800 dark:text-white mb-6">
                         Start Your AI Interview
                     </h2>
 
-                    <p className="text-gray-600 mb-10">
+                    <p className="text-gray-600 dark:text-gray-300 mb-10">
                         Practice real interview scenarios powered by AI.
                         Improve communication, technical skills, and confidence.
                     </p>
@@ -112,15 +112,15 @@ function Step1SetUp({ onStart }) {
                         {
                             [
                                 {
-                                    icon: <FaUserTie className="text-green-600 text-xl" />,
+                                    icon: <FaUserTie className="text-green-600 dark:text-emerald-400 text-xl" />,
                                     text: "Choose Role & Experience",
                                 },
                                 {
-                                    icon: <FaMicrophoneAlt className="text-green-600 text-xl" />,
+                                    icon: <FaMicrophoneAlt className="text-green-600 dark:text-emerald-400 text-xl" />,
                                     text: "Smart Voice Interview",
                                 },
                                 {
-                                    icon: <FaChartLine className="text-green-600 text-xl" />,
+                                    icon: <FaChartLine className="text-green-600 dark:text-emerald-400 text-xl" />,
                                     text: "Performance Analytics",
                                 },
                             ].map((item, index) => (
@@ -129,9 +129,9 @@ function Step1SetUp({ onStart }) {
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.3 + index * 0.15 }}
                                     whileHover={{ scale: 1.03 }}
-                                    className='flex items-center space-x-4 bg-white p-4 rounded-xl shadow-sm cursor-pointer'>
+                                    className='flex items-center space-x-4 bg-white dark:bg-slate-800/80 border border-transparent dark:border-slate-700/50 p-4 rounded-xl shadow-sm cursor-pointer transition-colors'>
                                     {item.icon}
-                                    <span className='text-gray-700 font-medium'>{item.text}</span>
+                                    <span className='text-gray-700 dark:text-gray-200 font-medium'>{item.text}</span>
 
                                 </motion.div>
                             ))
@@ -148,9 +148,9 @@ function Step1SetUp({ onStart }) {
                     initial={{ x: 80, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ duration: 0.7 }}
-                    className="p-12 bg-white">
+                    className="p-8 sm:p-12 bg-white dark:bg-slate-900 transition-colors duration-300">
 
-                    <h2 className='text-3xl font-bold text-gray-800 mb-8'>
+                    <h2 className='text-3xl font-bold text-gray-800 dark:text-white mb-8'>
                         Interview SetUp
                     </h2>
 
@@ -158,19 +158,19 @@ function Step1SetUp({ onStart }) {
                     <div className='space-y-6'>
 
                         <div className='relative'>
-                            <FaUserTie className='absolute top-4 left-4 text-gray-400' />
+                            <FaUserTie className='absolute top-4 left-4 text-gray-400 dark:text-gray-500' />
 
                             <input type='text' placeholder='Enter role'
-                                className='w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'
+                                className='w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'
                                 onChange={(e) => setRole(e.target.value)} value={role} />
                         </div>
 
 
                         <div className='relative'>
-                            <FaBriefcase className='absolute top-4 left-4 text-gray-400' />
+                            <FaBriefcase className='absolute top-4 left-4 text-gray-400 dark:text-gray-500' />
 
                             <input type='text' placeholder='Experience (e.g. 2 years)'
-                                className='w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'
+                                className='w-full pl-12 pr-4 py-3 border border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'
                                 onChange={(e) => setExperience(e.target.value)} value={experience} />
 
 
@@ -179,7 +179,7 @@ function Step1SetUp({ onStart }) {
 
                         <select value={mode}
                             onChange={(e) => setMode(e.target.value)}
-                            className='w-full py-3 px-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'>
+                            className='w-full py-3 px-4 border border-gray-200 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition'>
 
                             <option value="Technical">Technical Interview</option>
                             <option value="HR">HR Interview</option>
@@ -190,9 +190,9 @@ function Step1SetUp({ onStart }) {
                             <motion.div
                                 whileHover={{ scale: 1.02 }}
                                 onClick={() => document.getElementById("resumeUpload").click()}
-                                className='border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-green-500 hover:bg-green-50 transition'>
+                                className='border-2 border-dashed border-gray-300 dark:border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-green-500 dark:hover:border-emerald-400 hover:bg-green-50 dark:hover:bg-slate-800/50 transition'>
 
-                                <FaFileUpload className='text-4xl mx-auto text-green-600 mb-3' />
+                                <FaFileUpload className='text-4xl mx-auto text-green-600 dark:text-emerald-400 mb-3' />
 
                                 <input type="file"
                                     accept="application/pdf"
@@ -200,7 +200,7 @@ function Step1SetUp({ onStart }) {
                                     className='hidden'
                                     onChange={(e) => setResumeFile(e.target.files[0])} />
 
-                                <p className='text-gray-600 font-medium'>
+                                <p className='text-gray-600 dark:text-gray-300 font-medium'>
                                     {resumeFile ? resumeFile.name : "Click to upload resume (Optional)"}
                                 </p>
 
@@ -212,7 +212,7 @@ function Step1SetUp({ onStart }) {
                                             handleUploadResume()
                                         }}
 
-                                        className='mt-4 bg-gray-900 text-white px-5 py-2 rounded-lg hover:bg-gray-800 transition'>
+                                        className='mt-4 bg-gray-900 dark:bg-emerald-600 text-white px-5 py-2 rounded-lg hover:bg-gray-800 dark:hover:bg-emerald-700 transition font-semibold cursor-pointer'>
                                         {analyzing ? "Analyzing..." : "Analyze Resume"}
 
 
@@ -228,16 +228,16 @@ function Step1SetUp({ onStart }) {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className='bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4'>
-                                <h3 className='text-lg font-semibold text-gray-800'>
+                                className='bg-gray-50 dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-xl p-5 space-y-4'>
+                                <h3 className='text-lg font-semibold text-gray-800 dark:text-white'>
                                     Resume Analysis Result</h3>
 
                                 {projects.length > 0 && (
                                     <div>
-                                        <p className='font-medium text-gray-700 mb-1'>
+                                        <p className='font-medium text-gray-700 dark:text-gray-300 mb-1'>
                                             Projects:</p>
 
-                                        <ul className='list-disc list-inside text-gray-600 space-y-1'>
+                                        <ul className='list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1'>
                                             {projects.map((p, i) => (
                                                 <li key={i}>{p}</li>
                                             ))}
@@ -247,12 +247,12 @@ function Step1SetUp({ onStart }) {
 
                                 {skills.length > 0 && (
                                     <div>
-                                        <p className='font-medium text-gray-700 mb-1'>
+                                        <p className='font-medium text-gray-700 dark:text-gray-300 mb-1'>
                                             Skills:</p>
 
                                         <div className='flex flex-wrap gap-2'>
                                             {skills.map((s, i) => (
-                                                <span key={i} className='bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm'>{s}</span>
+                                                <span key={i} className='bg-green-100 dark:bg-emerald-950 text-green-700 dark:text-emerald-300 border border-transparent dark:border-emerald-800 px-3 py-1 rounded-full text-sm font-semibold'>{s}</span>
                                             ))}
                                         </div>
                                     </div>
@@ -267,8 +267,8 @@ function Step1SetUp({ onStart }) {
                             disabled={!role || !experience || loading}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
-                            className='w-full disabled:bg-gray-600 bg-green-600 hover:bg-green-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md'>
-                            {loading ? "Staring...":"Start Interview"}
+                            className='w-full disabled:bg-gray-600 bg-green-600 dark:bg-emerald-600 hover:bg-green-700 dark:hover:bg-emerald-700 text-white py-3 rounded-full text-lg font-semibold transition duration-300 shadow-md cursor-pointer'>
+                            {loading ? "Starting...":"Start Interview"}
 
 
                         </motion.button>

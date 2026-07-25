@@ -159,7 +159,7 @@ export default function CertificateCard({ certificate }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full bg-white rounded-3xl border border-gray-200 shadow-xl overflow-hidden flex flex-col justify-between relative"
+      className="w-full bg-white dark:bg-slate-900 rounded-3xl border border-gray-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col justify-between relative transition-colors duration-300"
     >
       {/* Top Banner Header */}
       <div className={`bg-gradient-to-r ${theme.bg} p-6 text-white relative`}>
@@ -184,13 +184,13 @@ export default function CertificateCard({ certificate }) {
       <div className="p-6 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
           <div>
-            <span className="text-gray-400 block font-medium">Candidate</span>
-            <span className="font-extrabold text-gray-800 text-base">{candidateName}</span>
+            <span className="text-gray-400 dark:text-gray-400 block font-medium">Candidate</span>
+            <span className="font-extrabold text-gray-800 dark:text-white text-base">{candidateName}</span>
           </div>
 
           <div>
-            <span className="text-gray-400 block font-medium">Benchmark Score</span>
-            <span className="font-extrabold text-emerald-600 text-base bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+            <span className="text-gray-400 dark:text-gray-400 block font-medium">Benchmark Score</span>
+            <span className="font-extrabold text-emerald-600 dark:text-emerald-300 text-base bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
               {finalScore}/10 Overall
             </span>
           </div>
@@ -198,14 +198,14 @@ export default function CertificateCard({ certificate }) {
 
         {/* Skill Tags */}
         <div className="space-y-1.5">
-          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+          <span className="text-[11px] font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
             Verified Competencies
           </span>
           <div className="flex flex-wrap gap-1.5">
             {skillsVerified.map((skill, idx) => (
               <span
                 key={idx}
-                className="text-xs bg-gray-100 text-gray-700 font-semibold px-2.5 py-1 rounded-md border border-gray-200 flex items-center gap-1"
+                className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold px-2.5 py-1 rounded-md border border-gray-200 dark:border-slate-700 flex items-center gap-1"
               >
                 <FaCheckCircle className="text-emerald-500 text-[10px]" /> {skill}
               </span>
@@ -214,32 +214,32 @@ export default function CertificateCard({ certificate }) {
         </div>
 
         {/* Breakdown Row */}
-        <div className="grid grid-cols-3 gap-2 text-center bg-gray-50 p-3 rounded-2xl border border-gray-100 text-xs">
+        <div className="grid grid-cols-3 gap-2 text-center bg-gray-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-gray-100 dark:border-slate-700 text-xs">
           <div>
-            <span className="text-gray-400 block font-medium text-[10px]">Confidence</span>
-            <span className="font-extrabold text-gray-800">{confidence}/10</span>
+            <span className="text-gray-400 dark:text-gray-400 block font-medium text-[10px]">Confidence</span>
+            <span className="font-extrabold text-gray-800 dark:text-white">{confidence}/10</span>
           </div>
           <div>
-            <span className="text-gray-400 block font-medium text-[10px]">Communication</span>
-            <span className="font-extrabold text-gray-800">{communication}/10</span>
+            <span className="text-gray-400 dark:text-gray-400 block font-medium text-[10px]">Communication</span>
+            <span className="font-extrabold text-gray-800 dark:text-white">{communication}/10</span>
           </div>
           <div>
-            <span className="text-gray-400 block font-medium text-[10px]">Correctness</span>
-            <span className="font-extrabold text-gray-800">{correctness}/10</span>
+            <span className="text-gray-400 dark:text-gray-400 block font-medium text-[10px]">Correctness</span>
+            <span className="font-extrabold text-gray-800 dark:text-white">{correctness}/10</span>
           </div>
         </div>
 
         {/* Credential Meta */}
-        <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+        <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-slate-800">
           <span>
-            ID: <strong className="text-gray-800">{credentialId}</strong>
+            ID: <strong className="text-gray-800 dark:text-white">{credentialId}</strong>
           </span>
           <span>Issued: {formattedDate}</span>
         </div>
       </div>
 
       {/* Card Actions Footer: LinkedIn, Share Link, PDF */}
-      <div className="bg-gray-50 p-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-gray-50 dark:bg-slate-800/50 p-4 border-t border-gray-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
         <a
           href={linkedinAddUrl}
           target="_blank"
@@ -251,7 +251,7 @@ export default function CertificateCard({ certificate }) {
 
         <button
           onClick={copyLink}
-          className="bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 py-2.5 px-3 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
+          className="bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-slate-700 py-2.5 px-3 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer"
         >
           <FaCopy size={13} /> {copied ? "Copied Link!" : "Copy Link"}
         </button>

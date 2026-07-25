@@ -535,12 +535,12 @@ function Step2Interview({ interviewData, onFinish }) {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 flex flex-col items-center justify-center p-4 sm:p-6 space-y-6">
-      <div className="w-full max-w-350 min-h-[80vh] bg-white rounded-3xl shadow-2xl border border-gray-200 flex flex-col lg:flex-row overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-teal-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300 flex flex-col items-center justify-center p-4 sm:p-6 space-y-6">
+      <div className="w-full max-w-350 min-h-[80vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-slate-800 flex flex-col lg:flex-row overflow-hidden transition-colors duration-300">
         {/* Video & Camera Stream Section */}
-        <div className="w-full lg:w-[35%] bg-white flex flex-col items-center p-6 space-y-6 border-r border-gray-200">
+        <div className="w-full lg:w-[35%] bg-white dark:bg-slate-900 flex flex-col items-center p-6 space-y-6 border-r border-gray-200 dark:border-slate-800 transition-colors">
           {/* AI Interviewer Video */}
-          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl relative border border-gray-200">
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl relative border border-gray-200 dark:border-slate-700">
             <video
               src={videoSource}
               key={videoSource}
@@ -556,7 +556,7 @@ function Step2Interview({ interviewData, onFinish }) {
           </div>
 
           {/* Candidate User WebCam Stream Feed */}
-          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-md relative bg-slate-900 aspect-video border border-gray-200">
+          <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-md relative bg-slate-900 aspect-video border border-gray-200 dark:border-slate-700">
             <video
               ref={userWebcamRef}
               autoPlay
@@ -587,47 +587,47 @@ function Step2Interview({ interviewData, onFinish }) {
 
           {/* Subtitle */}
           {subtitle && (
-            <div className="w-full max-w-md bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-gray-700 text-sm sm:text-base font-medium text-center leading-relaxed">
+            <div className="w-full max-w-md bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 shadow-sm">
+              <p className="text-gray-700 dark:text-gray-200 text-sm sm:text-base font-medium text-center leading-relaxed">
                 {subtitle}
               </p>
             </div>
           )}
 
           {/* Timer Area */}
-          <div className="w-full max-w-md bg-white border border-gray-200 rounded-2xl shadow-md p-6 space-y-5">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800/80 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-md p-6 space-y-5">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-500">Interview Status</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Interview Status</span>
               {isAIPlaying && (
-                <span className="text-sm font-semibold text-emerald-600">
+                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                   AI Speaking
                 </span>
               )}
             </div>
 
-            <div className="h-px bg-gray-200" />
+            <div className="h-px bg-gray-200 dark:bg-slate-700" />
 
             <div className="flex justify-center">
               <Timer timeLeft={timeLeft} totalTime={currentQuestion?.timeLimit} />
             </div>
 
-            <div className="h-px bg-gray-200" />
+            <div className="h-px bg-gray-200 dark:bg-slate-700" />
 
             <div className="grid grid-cols-2 gap-6 text-center">
               <div>
-                <span className="text-2xl font-bold text-emerald-600">
+                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {isInFollowUp ? `${currentIndex + 1}.1` : currentIndex + 1}
                 </span>
-                <span className="text-xs text-gray-400 block">
+                <span className="text-xs text-gray-400 dark:text-gray-400 block">
                   {isInFollowUp ? "Follow-Up Question" : "Current Question"}
                 </span>
               </div>
 
               <div>
-                <span className="text-2xl font-bold text-emerald-600">
+                <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                   {questions.length}
                 </span>
-                <span className="text-xs text-gray-400 block">Main Questions</span>
+                <span className="text-xs text-gray-400 dark:text-gray-400 block">Main Questions</span>
               </div>
             </div>
           </div>
@@ -636,11 +636,11 @@ function Step2Interview({ interviewData, onFinish }) {
         {/* Answer & Real-Time Performance Section */}
         <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 relative space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-bold text-emerald-600">
+            <h2 className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
               AI Smart Interview
             </h2>
             {isInFollowUp && (
-              <span className="bg-purple-100 text-purple-700 border border-purple-200 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
+              <span className="bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
                 🔄 Adaptive Follow-Up
               </span>
             )}
@@ -650,12 +650,12 @@ function Step2Interview({ interviewData, onFinish }) {
             <div
               className={`relative p-4 sm:p-6 rounded-2xl border shadow-sm transition-all ${
                 isInFollowUp
-                  ? "bg-purple-50/60 border-purple-200"
-                  : "bg-gray-50 border-gray-200"
+                  ? "bg-purple-50/60 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800"
+                  : "bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
                   {isInFollowUp
                     ? `Follow-Up for Question ${currentIndex + 1}`
                     : `Question ${currentIndex + 1} of ${questions.length}`}
@@ -667,7 +667,7 @@ function Step2Interview({ interviewData, onFinish }) {
                 )}
               </div>
 
-              <div className="text-base sm:text-lg font-semibold text-gray-800 leading-relaxed">
+              <div className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white leading-relaxed">
                 {currentQuestion?.question}
               </div>
             </div>
@@ -677,7 +677,7 @@ function Step2Interview({ interviewData, onFinish }) {
             placeholder="Type or speak your answer here..."
             onChange={(e) => setAnswer(e.target.value)}
             value={answer}
-            className="w-full h-36 bg-gray-100 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 focus:ring-2 focus:ring-emerald-500 transition text-gray-800"
+            className="w-full h-36 bg-gray-100 dark:bg-slate-800 p-4 sm:p-6 rounded-2xl resize-none outline-none border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 transition text-gray-800 dark:text-gray-100"
           />
 
           {!feedback ? (

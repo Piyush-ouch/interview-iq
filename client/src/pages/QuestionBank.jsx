@@ -132,7 +132,7 @@ function QuestionBank() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-white transition-colors duration-300 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
@@ -141,17 +141,17 @@ function QuestionBank() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/")}
-              className="p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 transition shadow-xs cursor-pointer"
+              className="p-2.5 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer"
               title="Go Back"
             >
               <FaArrowLeft size={14} />
             </button>
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-                <FaBookOpen className="text-blue-600" />
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                <FaBookOpen className="text-emerald-600 dark:text-emerald-400" />
                 Industry Question Banks
               </h1>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                 Explore pre-built persistent question sets for 50+ roles across Junior, Mid, and Senior levels.
               </p>
             </div>

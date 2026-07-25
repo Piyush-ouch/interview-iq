@@ -42,7 +42,7 @@ export default function Certifications() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] transition-colors duration-300 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
@@ -69,15 +69,15 @@ export default function Certifications() {
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-200">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-800 transition-colors">
           <div className="relative w-full sm:w-80">
-            <FaSearch className="absolute left-3.5 top-3.5 text-gray-400 text-sm" />
+            <FaSearch className="absolute left-3.5 top-3.5 text-gray-400 dark:text-gray-500 text-sm" />
             <input
               type="text"
               placeholder="Search by role or credential ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition"
+              className="w-full bg-gray-50 dark:bg-slate-800 pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition text-gray-800 dark:text-gray-100"
             />
           </div>
 
@@ -89,8 +89,8 @@ export default function Certifications() {
                 onClick={() => setSelectedTier(tier)}
                 className={`text-xs px-3.5 py-2 rounded-xl font-bold transition text-nowrap border cursor-pointer ${
                   selectedTier === tier
-                    ? "bg-black text-white border-black"
-                    : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200"
+                    ? "bg-black dark:bg-emerald-600 text-white border-black dark:border-emerald-600"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-200 dark:hover:bg-slate-700"
                 }`}
               >
                 {tier}
@@ -103,15 +103,15 @@ export default function Certifications() {
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-gray-500 text-sm font-medium">Loading your verified credentials...</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Loading your verified credentials...</p>
           </div>
         ) : filteredCertificates.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-200 space-y-4 max-w-lg mx-auto shadow-sm">
-            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-gray-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto shadow-sm transition-colors">
+            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl font-bold">
               🏆
             </div>
-            <h3 className="text-xl font-bold text-gray-800">No Certificates Earned Yet</h3>
-            <p className="text-gray-500 text-sm leading-relaxed">
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white">No Certificates Earned Yet</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
               Complete an interview with a score of 7.0 or higher to earn an official Verifiable Skill Badge for your LinkedIn & resume.
             </p>
             <button

@@ -57,16 +57,16 @@ function Analytics() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-white transition-colors duration-300 flex flex-col">
         <Navbar />
-        <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-12 text-center text-gray-500">
+        <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-12 text-center text-gray-500 dark:text-gray-400">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            <div className="h-8 bg-gray-200 dark:bg-slate-800 rounded w-1/3 mx-auto"></div>
+            <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-1/2 mx-auto"></div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <div className="h-32 bg-gray-200 rounded-2xl"></div>
-              <div className="h-32 bg-gray-200 rounded-2xl"></div>
-              <div className="h-32 bg-gray-200 rounded-2xl"></div>
+              <div className="h-32 bg-gray-200 dark:bg-slate-800 rounded-2xl"></div>
+              <div className="h-32 bg-gray-200 dark:bg-slate-800 rounded-2xl"></div>
+              <div className="h-32 bg-gray-200 dark:bg-slate-800 rounded-2xl"></div>
             </div>
           </div>
         </main>
@@ -76,20 +76,20 @@ function Analytics() {
 
   if (!data || !data.hasData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-white transition-colors duration-300 flex flex-col">
         <Navbar />
         <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-16 text-center">
-          <div className="bg-white p-10 rounded-3xl border border-gray-200 shadow-sm max-w-xl mx-auto">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="bg-white dark:bg-slate-900 p-10 rounded-3xl border border-gray-200 dark:border-slate-800 shadow-sm max-w-xl mx-auto transition-colors">
+            <div className="w-16 h-16 bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <FaChartLine size={28} />
             </div>
-            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">No Interview Analytics Yet</h2>
-            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+            <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">No Interview Analytics Yet</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 leading-relaxed">
               Complete your first AI mock interview to unlock candidate comparative analytics, industry benchmarking, skill gap analysis, and career trajectory predictions!
             </p>
             <button
               onClick={() => navigate("/interview")}
-              className="bg-black hover:bg-gray-800 text-white font-semibold px-6 py-3 rounded-xl text-sm transition shadow-md cursor-pointer"
+              className="bg-black dark:bg-emerald-600 hover:bg-gray-800 dark:hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-xl text-sm transition shadow-md cursor-pointer"
             >
               Start Your First Interview
             </button>
@@ -102,7 +102,7 @@ function Analytics() {
   const { summary, comparativeAnalytics, industryBenchmarks, skillGapAnalysis, careerTrajectory } = data;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0b0f19] text-gray-900 dark:text-white transition-colors duration-300 flex flex-col">
       <Navbar />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
@@ -112,12 +112,12 @@ function Analytics() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate("/")}
-                className="p-2.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 transition shadow-xs cursor-pointer"
+                className="p-2.5 rounded-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition shadow-xs cursor-pointer"
                 title="Go Back"
               >
                 <FaArrowLeft size={14} />
               </button>
-              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
                 <FaChartLine className="text-blue-600" />
                 Progress Analytics & Career Insights
               </h1>

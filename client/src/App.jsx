@@ -15,6 +15,8 @@ import QuestionBank from './pages/QuestionBank'
 import Analytics from './pages/Analytics'
 import ResumeOptimizer from './pages/ResumeOptimizer'
 import InterviewBattle from './pages/InterviewBattle'
+import Certifications from './pages/Certifications'
+import VerifyCredential from './pages/VerifyCredential'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -47,6 +49,8 @@ function App() {
       <Route path='/analytics' element={<Analytics/>}/>
       <Route path='/resume-optimizer' element={<ResumeOptimizer/>}/>
       <Route path='/battle' element={<InterviewBattle/>}/>
+      <Route path='/certifications' element={<Certifications/>}/>
+      <Route path='/verify-credential/:credentialId' element={<VerifyCredential/>}/>
     </Routes>
   )
 }

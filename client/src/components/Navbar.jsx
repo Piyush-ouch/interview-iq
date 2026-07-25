@@ -106,6 +106,10 @@ function Navbar() {
                               Schedule Interview
                               <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>
                             </button>
+                            <button onClick={()=>{ navigate("/certifications"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600 flex items-center justify-between font-medium'>
+                              Skill Badges & Certs
+                              <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">🏆 VERIFIED</span>
+                            </button>
                             <button onClick={()=>{ navigate("/history"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black text-gray-600'>Interview History</button>
                             <button onClick={handleLogout} 
                             className='w-full text-left text-sm py-2 flex items-center gap-2 text-red-500 mt-1 border-t border-gray-100 pt-2'>

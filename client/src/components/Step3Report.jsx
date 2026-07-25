@@ -1,5 +1,5 @@
-import React from 'react'
-import { FaArrowLeft } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react'
+import { FaArrowLeft, FaTrophy, FaLinkedin } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from "motion/react"
 import { buildStyles, CircularProgressbar } from 'react-circular-progressbar';
@@ -7,8 +7,34 @@ import 'react-circular-progressbar/dist/styles.css';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import axios from 'axios';
+import { ServerUrl } from '../App';
+import CertificateCard from './CertificateCard';
 
 function Step3Report({ report }) {
+  const [issuedCert, setIssuedCert] = useState(null);
+
+  useEffect(() => {
+    async function autoIssueCert() {
+      if (report && (report.finalScore || 0) >= 7.0 && (report._id || report.interviewId)) {
+        try {
+          const targetId = report._id || report.interviewId;
+          const res = await axios.post(
+            `${ServerUrl}/api/certificate/issue`,
+            { interviewId: targetId },
+            { withCredentials: true }
+          );
+          if (res.data?.certificate) {
+            setIssuedCert(res.data.certificate);
+          }
+        } catch (err) {
+          console.error("Auto certificate issuance check:", err);
+        }
+      }
+    }
+    autoIssueCert();
+  }, [report]);
+
   if (!report) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -365,6 +391,25 @@ function Step3Report({ report }) {
               </div>
             </div>
           </motion.div>
+
+          {/* Earned Verifiable Credential Certificate Card */}
+          {issuedCert && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-2"
+            >
+              <div className="flex items-center justify-between px-1">
+                <span className="text-sm font-bold text-gray-800 flex items-center gap-1.5">
+                  <FaTrophy className="text-amber-500" /> Earned Verifiable Credential
+                </span>
+                <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-md border border-emerald-200">
+                  LinkedIn Ready
+                </span>
+              </div>
+              <CertificateCard certificate={issuedCert} />
+            </motion.div>
+          )}
 
 
         </div>

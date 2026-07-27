@@ -19,6 +19,7 @@ import Certifications from './pages/Certifications'
 import VerifyCredential from './pages/VerifyCredential'
 import CandidateMatchingLeaderboard from './pages/CandidateMatchingLeaderboard'
 import CollaborativeWhiteboard from './pages/CollaborativeWhiteboard'
+import DifficultyProgressionEngine from './pages/DifficultyProgressionEngine'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -56,6 +57,7 @@ function App() {
       <Route path='/candidate-matching' element={<CandidateMatchingLeaderboard/>}/>
       <Route path='/whiteboard' element={<CollaborativeWhiteboard/>}/>
       <Route path='/whiteboard/:roomId' element={<CollaborativeWhiteboard/>}/>
+      <Route path='/difficulty-progression' element={<DifficultyProgressionEngine/>}/>
     </Routes>
   )
 }

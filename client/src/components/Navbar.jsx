@@ -120,6 +120,10 @@ function Navbar() {
                               Live Whiteboard & Code
                               <span className="bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">REALTIME ✏️</span>
                             </button>
+                            <button onClick={() => { navigate("/difficulty-progression"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black dark:hover:text-white text-gray-600 dark:text-gray-300 flex items-center justify-between font-medium cursor-pointer'>
+                              Difficulty Progression Engine
+                              <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">SM-2 AI 📈</span>
+                            </button>
                             <button onClick={() => { navigate("/schedule"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black dark:hover:text-white text-gray-600 dark:text-gray-300 flex items-center justify-between font-medium cursor-pointer'>
                               Schedule Interview
                               <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>

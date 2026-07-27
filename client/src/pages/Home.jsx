@@ -205,6 +205,12 @@ function Home() {
                     icon: <BsBarChart size={20} />,
                     title: "Real-Time Collaborative Whiteboard & Code Studio",
                     desc: "WebSocket-powered shared drawing canvas, system design stencils, live code synchronization, and laser pointer annotations."
+                  },
+                  {
+                    image: evalImg,
+                    icon: <BsRobot size={20} />,
+                    title: "Dynamic Difficulty Progression & SM-2 Engine",
+                    desc: "Real-time difficulty scaling, SuperMemo 2 spaced repetition for weak topics, and predictive challenge readiness assessment."
                   }
                 ].map((item, index) => (
                   <motion.div key={index}

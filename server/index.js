@@ -14,6 +14,7 @@ import analyticsRouter from "./routes/analytics.route.js"
 import resumeOptimizerRouter from "./routes/resumeOptimizer.route.js"
 import battleRouter from "./routes/battle.route.js"
 import certificateRouter from "./routes/certificate.route.js"
+import candidateMatchRouter from "./routes/candidateMatch.route.js"
 import { initReminderScheduler } from "./services/reminder.service.js"
 import { seedQuestionBankIfEmpty } from "./services/questionBankSeed.js"
 
@@ -36,6 +37,7 @@ app.use("/api/analytics", analyticsRouter)
 app.use("/api/resume-optimizer", resumeOptimizerRouter)
 app.use("/api/battle", battleRouter)
 app.use("/api/certificate", certificateRouter)
+app.use("/api/matching", candidateMatchRouter)
 
 import http from "http"
 import { initWebSocketServer } from "./services/socket.service.js"

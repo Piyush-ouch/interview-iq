@@ -193,6 +193,12 @@ function Home() {
                     icon: <BsBarChart size={20} />,
                     title: "History & Analytics",
                     desc: "Track progress with performance graphs and topic analysis."
+                  },
+                  {
+                    image: evalImg,
+                    icon: <BsRobot size={20} />,
+                    title: "Smart Candidate Matching & Leaderboard",
+                    desc: "Match candidates based on skill gaps, group by difficulty tiers, and rank on peer leaderboards."
                   }
                 ].map((item, index) => (
                   <motion.div key={index}

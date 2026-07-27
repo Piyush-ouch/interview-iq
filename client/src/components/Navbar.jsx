@@ -112,6 +112,10 @@ function Navbar() {
                               1v1 Peer Battle
                               <span className="bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">HOT ⚔️</span>
                             </button>
+                            <button onClick={() => { navigate("/candidate-matching"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black dark:hover:text-white text-gray-600 dark:text-gray-300 flex items-center justify-between font-medium cursor-pointer'>
+                              Smart Match & Leaderboard
+                              <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">AI MATCH</span>
+                            </button>
                             <button onClick={() => { navigate("/schedule"); setShowUserPopup(false); }} className='w-full text-left text-sm py-1.5 hover:text-black dark:hover:text-white text-gray-600 dark:text-gray-300 flex items-center justify-between font-medium cursor-pointer'>
                               Schedule Interview
                               <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">NEW</span>

@@ -17,6 +17,7 @@ import ResumeOptimizer from './pages/ResumeOptimizer'
 import InterviewBattle from './pages/InterviewBattle'
 import Certifications from './pages/Certifications'
 import VerifyCredential from './pages/VerifyCredential'
+import CandidateMatchingLeaderboard from './pages/CandidateMatchingLeaderboard'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -51,6 +52,7 @@ function App() {
       <Route path='/battle' element={<InterviewBattle/>}/>
       <Route path='/certifications' element={<Certifications/>}/>
       <Route path='/verify-credential/:credentialId' element={<VerifyCredential/>}/>
+      <Route path='/candidate-matching' element={<CandidateMatchingLeaderboard/>}/>
     </Routes>
   )
 }

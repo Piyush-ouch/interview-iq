@@ -2,6 +2,8 @@ import { WebSocketServer, WebSocket } from "ws";
 
 // In-memory active interview streaming sessions
 const activeSessions = new Map();
+// In-memory collaborative whiteboard rooms
+const whiteboardRooms = new Map();
 
 /**
  * Initializes WebSocket Server attached to Node HTTP server
@@ -12,6 +14,7 @@ export const initWebSocketServer = (server) => {
 
   wss.on("connection", (ws, req) => {
     let currentInterviewId = null;
+    let currentWhiteboardRoomId = null;
 
     ws.isAlive = true;
     ws.on("pong", () => {
@@ -67,7 +70,6 @@ export const initWebSocketServer = (server) => {
               pitchVariance = 0,
             } = payload || {};
 
-            // Calculate composite real-time confidence score (50% verbal, 25% posture, 25% eye contact)
             const overallConfidence = Math.min(
               100,
               Math.max(
@@ -97,13 +99,11 @@ export const initWebSocketServer = (server) => {
               overallConfidence,
             };
 
-            // Store in circular buffer (max 100 frames)
             session.history.push(metricFrame);
             if (session.history.length > 100) {
               session.history.shift();
             }
 
-            // Broadcast back streamed feedback
             const responseMessage = JSON.stringify({
               type: "metrics_update",
               payload: {
@@ -118,6 +118,125 @@ export const initWebSocketServer = (server) => {
                 client.send(responseMessage);
               }
             });
+            break;
+          }
+
+          // === COLLABORATIVE WHITEBOARD & CODE EVENTS ===
+          case "join_whiteboard_room": {
+            const { roomId, userName } = payload || {};
+            if (roomId) {
+              currentWhiteboardRoomId = roomId;
+              if (!whiteboardRooms.has(roomId)) {
+                whiteboardRooms.set(roomId, {
+                  clients: new Set(),
+                  strokes: [],
+                  code: "",
+                });
+              }
+              const room = whiteboardRooms.get(roomId);
+              room.clients.add(ws);
+
+              ws.send(
+                JSON.stringify({
+                  type: "whiteboard_joined",
+                  payload: {
+                    roomId,
+                    clientsCount: room.clients.size,
+                    strokes: room.strokes,
+                    code: room.code,
+                  },
+                })
+              );
+
+              // Broadcast user joined
+              const notifyMessage = JSON.stringify({
+                type: "user_joined_whiteboard",
+                payload: { roomId, clientsCount: room.clients.size, userName },
+              });
+              room.clients.forEach((client) => {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                  client.send(notifyMessage);
+                }
+              });
+            }
+            break;
+          }
+
+          case "whiteboard_draw_stroke": {
+            const { roomId, stroke } = payload || {};
+            if (roomId && whiteboardRooms.has(roomId)) {
+              const room = whiteboardRooms.get(roomId);
+              room.strokes.push(stroke);
+
+              const drawMsg = JSON.stringify({
+                type: "whiteboard_stroke_added",
+                payload: { roomId, stroke },
+              });
+
+              room.clients.forEach((client) => {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                  client.send(drawMsg);
+                }
+              });
+            }
+            break;
+          }
+
+          case "whiteboard_clear": {
+            const { roomId } = payload || {};
+            if (roomId && whiteboardRooms.has(roomId)) {
+              const room = whiteboardRooms.get(roomId);
+              room.strokes = [];
+
+              const clearMsg = JSON.stringify({
+                type: "whiteboard_cleared",
+                payload: { roomId },
+              });
+
+              room.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                  client.send(clearMsg);
+                }
+              });
+            }
+            break;
+          }
+
+          case "code_update": {
+            const { roomId, code, language, senderName } = payload || {};
+            if (roomId && whiteboardRooms.has(roomId)) {
+              const room = whiteboardRooms.get(roomId);
+              room.code = code;
+
+              const codeMsg = JSON.stringify({
+                type: "code_updated",
+                payload: { roomId, code, language, senderName },
+              });
+
+              room.clients.forEach((client) => {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                  client.send(codeMsg);
+                }
+              });
+            }
+            break;
+          }
+
+          case "laser_annotation": {
+            const { roomId, point, senderName } = payload || {};
+            if (roomId && whiteboardRooms.has(roomId)) {
+              const room = whiteboardRooms.get(roomId);
+              const laserMsg = JSON.stringify({
+                type: "laser_moved",
+                payload: { roomId, point, senderName },
+              });
+
+              room.clients.forEach((client) => {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                  client.send(laserMsg);
+                }
+              });
+            }
             break;
           }
 
@@ -142,6 +261,14 @@ export const initWebSocketServer = (server) => {
           activeSessions.delete(currentInterviewId);
         }
       }
+
+      if (currentWhiteboardRoomId && whiteboardRooms.has(currentWhiteboardRoomId)) {
+        const room = whiteboardRooms.get(currentWhiteboardRoomId);
+        room.clients.delete(ws);
+        if (room.clients.size === 0) {
+          whiteboardRooms.delete(currentWhiteboardRoomId);
+        }
+      }
     });
 
     ws.on("error", (err) => {
@@ -162,6 +289,6 @@ export const initWebSocketServer = (server) => {
     clearInterval(pingInterval);
   });
 
-  console.log("WebSocket Server initialized on /ws/metrics");
+  console.log("WebSocket Server initialized for metrics & collaborative whiteboard on /ws/metrics");
   return wss;
 };

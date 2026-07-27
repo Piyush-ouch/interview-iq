@@ -199,6 +199,12 @@ function Home() {
                     icon: <BsRobot size={20} />,
                     title: "Smart Candidate Matching & Leaderboard",
                     desc: "Match candidates based on skill gaps, group by difficulty tiers, and rank on peer leaderboards."
+                  },
+                  {
+                    image: techImg,
+                    icon: <BsBarChart size={20} />,
+                    title: "Real-Time Collaborative Whiteboard & Code Studio",
+                    desc: "WebSocket-powered shared drawing canvas, system design stencils, live code synchronization, and laser pointer annotations."
                   }
                 ].map((item, index) => (
                   <motion.div key={index}

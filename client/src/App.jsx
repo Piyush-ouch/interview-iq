@@ -18,6 +18,7 @@ import InterviewBattle from './pages/InterviewBattle'
 import Certifications from './pages/Certifications'
 import VerifyCredential from './pages/VerifyCredential'
 import CandidateMatchingLeaderboard from './pages/CandidateMatchingLeaderboard'
+import CollaborativeWhiteboard from './pages/CollaborativeWhiteboard'
 
 export const ServerUrl  = "http://localhost:8000"
 
@@ -53,6 +54,8 @@ function App() {
       <Route path='/certifications' element={<Certifications/>}/>
       <Route path='/verify-credential/:credentialId' element={<VerifyCredential/>}/>
       <Route path='/candidate-matching' element={<CandidateMatchingLeaderboard/>}/>
+      <Route path='/whiteboard' element={<CollaborativeWhiteboard/>}/>
+      <Route path='/whiteboard/:roomId' element={<CollaborativeWhiteboard/>}/>
     </Routes>
   )
 }

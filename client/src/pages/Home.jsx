@@ -211,6 +211,12 @@ function Home() {
                     icon: <BsRobot size={20} />,
                     title: "Dynamic Difficulty Progression & SM-2 Engine",
                     desc: "Real-time difficulty scaling, SuperMemo 2 spaced repetition for weak topics, and predictive challenge readiness assessment."
+                  },
+                  {
+                    image: confidenceImg,
+                    icon: <BsBarChart size={20} />,
+                    title: "AI Interviewer Style Transfer & Personalization",
+                    desc: "Choose between Casual Tech Lead, Strict Corporate Director, Aggressive Stress Tester, and Empathetic Mentor personalities."
                   }
                 ].map((item, index) => (
                   <motion.div key={index}

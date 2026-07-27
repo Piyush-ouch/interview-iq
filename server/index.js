@@ -17,6 +17,7 @@ import certificateRouter from "./routes/certificate.route.js"
 import candidateMatchRouter from "./routes/candidateMatch.route.js"
 import whiteboardRouter from "./routes/whiteboard.route.js"
 import difficultyProgressionRouter from "./routes/difficultyProgression.route.js"
+import personalityStyleRouter from "./routes/personalityStyle.route.js"
 import { initReminderScheduler } from "./services/reminder.service.js"
 import { seedQuestionBankIfEmpty } from "./services/questionBankSeed.js"
 
@@ -42,6 +43,7 @@ app.use("/api/certificate", certificateRouter)
 app.use("/api/matching", candidateMatchRouter)
 app.use("/api/whiteboard", whiteboardRouter)
 app.use("/api/progression", difficultyProgressionRouter)
+app.use("/api/personality", personalityStyleRouter)
 
 import http from "http"
 import { initWebSocketServer } from "./services/socket.service.js"
